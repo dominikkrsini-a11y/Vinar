@@ -10,6 +10,7 @@ import { getUserProfile, saveUserProfile, uploadImage } from '../firebase/firest
 import { logout } from '../firebase/auth';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
+import { reportError } from '../utils/reportError';
 
 const REGIONS = [
   'Slavonija', 'Baranja', 'Podunavlje', 'Pokuplje',
@@ -51,7 +52,13 @@ export default function ProfileScreen() {
         if (profile.photoUrl) setPhoto(profile.photoUrl);
       }
     } catch (e) {
-      console.log('Error loading profile:', e);
+      reportError(e, { screen: 'Profile', action: 'loadProfile' });
+      Alert.alert(
+        language === 'hr' ? 'Greška' : 'Error',
+        language === 'hr'
+          ? 'Ne mogu učitati profil.'
+          : 'Could not load your profile.'
+      );
     } finally {
       setLoading(false);
     }
@@ -123,7 +130,13 @@ export default function ProfileScreen() {
     try {
       await saveUserProfile(user.uid, { language: lang });
     } catch (e) {
-      console.log('Error saving language:', e);
+      reportError(e, { screen: 'Profile', action: 'saveLanguage', lang });
+      Alert.alert(
+        language === 'hr' ? 'Greška' : 'Error',
+        language === 'hr'
+          ? 'Ne mogu spremiti jezik.'
+          : 'Could not save language.'
+      );
     }
   };
 

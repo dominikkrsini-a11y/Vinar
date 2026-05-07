@@ -76,11 +76,11 @@ export default function MarketplaceScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadData();
+      loadMarketplaceData();
     }, [])
   );
 
-  const loadData = async () => {
+  const loadMarketplaceData = async () => {
     try {
       const [listingsData, profileData] = await Promise.all([
         getListings(),
@@ -89,7 +89,7 @@ export default function MarketplaceScreen() {
       setListings(listingsData);
       setProfile(profileData);
     } catch (e) {
-      reportError(e, { screen: 'Marketplace', action: 'loadData' });
+      reportError(e, { screen: 'Marketplace', action: 'loadMarketplaceData' });
       Alert.alert(
         language === 'hr' ? 'Greška' : 'Error',
         language === 'hr'
@@ -107,7 +107,7 @@ export default function MarketplaceScreen() {
       { text: t(language, 'cancel'), style: 'cancel' },
       { text: t(language, 'delete'), style: 'destructive', onPress: async () => {
         await deleteListing(listing.id);
-        await loadData();
+        await loadMarketplaceData();
       }},
     ]);
   };
@@ -246,7 +246,7 @@ export default function MarketplaceScreen() {
         profile={profile}
         userId={auth.currentUser.uid}
         userEmail={auth.currentUser?.email}
-        onPosted={loadData}
+        onPosted={loadMarketplaceData}
       />
 
     </View>

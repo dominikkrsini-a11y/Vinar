@@ -11,6 +11,7 @@ import { auth } from '../firebase/config';
 import { addEntry } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
+import { reportError } from '../utils/reportError';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -101,7 +102,7 @@ export default function AddEntryScreen({ route, navigation }) {
       }
     } catch (e) {
       Alert.alert(t(language, 'error'), 'Could not save entry.');
-      console.log(e);
+      reportError(e, { screen: 'AddEntry', action: 'saveEntry', type });
     } finally {
       setSaving(false);
     }

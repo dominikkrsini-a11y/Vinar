@@ -1,14 +1,16 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { colors } from '../theme/colors';
 import { saveUserProfile } from '../firebase/firestore';
 import { auth } from '../firebase/config';
+import { reportError } from '../utils/reportError';
 
 export default function LanguageSelectScreen({ onLanguageSelected }) {
   const handleSelect = async (lang) => {
     try {
       await saveUserProfile(auth.currentUser.uid, { language: lang });
     } catch (e) {
-      console.log('Error saving language:', e);
+      reportError(e, { screen: 'LanguageSelect', action: 'saveLanguage', lang });
+      Alert.alert('Error', 'Could not save language preference.');
     }
     onLanguageSelected(lang);
   };

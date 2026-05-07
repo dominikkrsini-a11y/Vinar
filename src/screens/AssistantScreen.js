@@ -53,7 +53,13 @@ export default function AssistantScreen() {
       }));
       setEntries(entriesMap);
     } catch (e) {
-      console.log('Error loading context:', e);
+      reportError(e, { screen: 'Assistant', action: 'loadContext' });
+      Alert.alert(
+        language === 'hr' ? 'Greška' : 'Error',
+        language === 'hr'
+          ? 'Ne mogu učitati podatke za asistenta.'
+          : 'Could not load assistant context.'
+      );
     } finally {
       setLoadingCtx(false);
     }

@@ -1,7 +1,7 @@
 import { useState, useCallback, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Modal,
+  ActivityIndicator, Modal, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
@@ -9,6 +9,7 @@ import { auth } from '../firebase/config';
 import { getUserProfile, getWines, getEntries } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
+import { reportError } from '../utils/reportError';
 
 export default function DashboardScreen({ navigation }) {
   const [profile,         setProfile]         = useState(null);
@@ -18,7 +19,7 @@ export default function DashboardScreen({ navigation }) {
   const [entryCount,      setEntryCount]      = useState(0);
   const { language } = useContext(LanguageContext);
 
-  const loadData = async () => {
+  const loadDashboardData = async () => {
     try {
       const [profileData, winesData] = await Promise.all([
         getUserProfile(auth.currentUser.uid),
@@ -32,7 +33,13 @@ export default function DashboardScreen({ navigation }) {
       );
       setEntryCount(counts.reduce((sum, e) => sum + e.length, 0));
     } catch (e) {
-      console.log('Dashboard error:', e);
+      reportError(e, { screen: 'Dashboard', action: 'loadDashboardData' });
+      Alert.alert(
+        language === 'hr' ? 'Greška' : 'Error',
+        language === 'hr'
+          ? 'Ne mogu učitati podatke na naslovnoj.'
+          : 'Could not load dashboard data.'
+      );
     } finally {
       setLoading(false);
     }
@@ -40,7 +47,7 @@ export default function DashboardScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      loadData();
+      loadDashboardData();
     }, [])
   );
 
