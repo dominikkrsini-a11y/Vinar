@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.surfaceDeep,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.inputBorder,
     borderRadius: 8,
     padding: 13,
     color: colors.textPrimary,
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   btnGoldText: {
-    color: '#1a0a08',
+    color: colors.background,
     fontWeight: '700',
     fontSize: 16,
   },

@@ -40,11 +40,11 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.background,
           borderTopColor: colors.border,
         },
         tabBarActiveTintColor:   colors.gold,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarInactiveTintColor: colors.iconInactive,
         tabBarLabelStyle: { fontSize: 11, marginBottom: 4 },
       }}
     >

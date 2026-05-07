@@ -1,16 +1,17 @@
 import { useState, useCallback, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, ActivityIndicator, Alert, Linking, Switch, Image,
-  KeyboardAvoidingView, Platform, Modal,
+  ActivityIndicator, Alert, Linking, Image,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { getListings, addListing, deleteListing, getUserProfile, uploadImage } from '../firebase/firestore';
+import { getListings, deleteListing, getUserProfile } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
+import { reportError } from '../utils/reportError';
+import { PostListingModal } from './marketplace/PostListingModal';
+import { Button } from '../components/ui/Button';
 
 const SUPPLIERS = [
   {
@@ -73,25 +74,6 @@ export default function MarketplaceScreen() {
   const [showForm,    setShowForm]    = useState(false);
   const [profile,     setProfile]     = useState(null);
 
-  // Form state
-  const [title,       setTitle]       = useState('');
-  const [category,    setCategory]    = useState('grapes');
-  const [description, setDescription] = useState('');
-  const [price,       setPrice]       = useState('');
-  const [showPhone,   setShowPhone]   = useState(true);
-  const [showEmail,   setShowEmail]   = useState(false);
-  const [saving,      setSaving]      = useState(false);
-  const [image,       setImage]       = useState(null);
-  const [uploadingImg, setUploadingImg] = useState(false);
-
-  const CATEGORIES = [
-    { key: 'grapes',    label: t(language, 'grapes'),    icon: '🍇' },
-    { key: 'bulk_wine', label: t(language, 'bulkWine'),  icon: '🍷' },
-    { key: 'equipment', label: t(language, 'equipment'), icon: '⚙️' },
-    { key: 'chemicals', label: t(language, 'chemicals'), icon: '🧪' },
-    { key: 'other',     label: t(language, 'other'),     icon: '📦' },
-  ];
-
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -107,95 +89,15 @@ export default function MarketplaceScreen() {
       setListings(listingsData);
       setProfile(profileData);
     } catch (e) {
-      console.log('Marketplace error:', e);
+      reportError(e, { screen: 'Marketplace', action: 'loadData' });
+      Alert.alert(
+        language === 'hr' ? 'Greška' : 'Error',
+        language === 'hr'
+          ? 'Ne mogu učitati Marketplace podatke.'
+          : 'Could not load marketplace data.'
+      );
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handlePickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(
-        language === 'hr' ? 'Dozvola odbijena' : 'Permission denied',
-        language === 'hr' ? 'Trebamo pristup vašim fotografijama.' : 'We need access to your photos.'
-      );
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.7,
-    });
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
-  };
-
-  const handleTakePhoto = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(
-        language === 'hr' ? 'Dozvola odbijena' : 'Permission denied',
-        language === 'hr' ? 'Trebamo pristup kameri.' : 'We need access to your camera.'
-      );
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.7,
-    });
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
-  };
-
-  const handlePost = async () => {
-    if (!title.trim()) {
-      Alert.alert(t(language, 'required'), t(language, 'titlePlaceholder'));
-      return;
-    }
-    if (!showPhone && !showEmail) {
-      Alert.alert(t(language, 'required'), t(language, 'contactMethods'));
-      return;
-    }
-    setSaving(true);
-    try {
-      let imageUrl = null;
-      if (image) {
-        setUploadingImg(true);
-        const path = `listings/${auth.currentUser.uid}/${Date.now()}.jpg`;
-        imageUrl = await uploadImage(image, path);
-        setUploadingImg(false);
-      }
-      await addListing({
-        title:      title.trim(),
-        category,
-        description: description.trim(),
-        price:      price.trim(),
-        showPhone,
-        showEmail,
-        phone:      showPhone ? profile?.phone || '' : null,
-        email:      showEmail ? auth.currentUser.email : null,
-        sellerName: `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim(),
-        wineryName: profile?.wineryName || '',
-        region:     profile?.region || '',
-        userId:     auth.currentUser.uid,
-        imageUrl,
-      });
-      setTitle(''); setCategory('grapes'); setDescription('');
-      setPrice(''); setShowPhone(true); setShowEmail(false);
-      setImage(null);
-      setShowForm(false);
-      await loadData();
-    } catch (e) {
-      Alert.alert(t(language, 'error'), 'Could not post listing.');
-      console.log(e);
-    } finally {
-      setSaving(false);
-      setUploadingImg(false);
     }
   };
 
@@ -217,8 +119,21 @@ export default function MarketplaceScreen() {
     });
   };
 
-  const getCategoryIcon  = (key) => CATEGORIES.find(c => c.key === key)?.icon  || '📦';
-  const getCategoryLabel = (key) => CATEGORIES.find(c => c.key === key)?.label || key;
+  const getCategoryIcon  = (key) => {
+    if (key === 'grapes') return '🍇';
+    if (key === 'bulk_wine') return '🍷';
+    if (key === 'equipment') return '⚙️';
+    if (key === 'chemicals') return '🧪';
+    return '📦';
+  };
+  const getCategoryLabel = (key) => {
+    if (key === 'grapes') return t(language, 'grapes');
+    if (key === 'bulk_wine') return t(language, 'bulkWine');
+    if (key === 'equipment') return t(language, 'equipment');
+    if (key === 'chemicals') return t(language, 'chemicals');
+    if (key === 'other') return t(language, 'other');
+    return key;
+  };
 
   return (
     <View style={styles.container}>
@@ -226,9 +141,7 @@ export default function MarketplaceScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>🛒 {t(language, 'marketplace')}</Text>
-        <TouchableOpacity style={styles.postBtn} onPress={() => setShowForm(true)}>
-          <Text style={styles.postBtnText}>{t(language, 'postBtn')}</Text>
-        </TouchableOpacity>
+        <Button title={t(language, 'postBtn')} onPress={() => setShowForm(true)} />
       </View>
 
       {/* Tabs */}
@@ -326,109 +239,15 @@ export default function MarketplaceScreen() {
         </ScrollView>
       )}
 
-      {/* ── POST FORM MODAL ── */}
-      <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet">
-        <KeyboardAvoidingView style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-          <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent}
-            keyboardShouldPersistTaps="handled">
-
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t(language, 'postListing')}</Text>
-              <TouchableOpacity onPress={() => setShowForm(false)}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.label}>{t(language, 'title')} *</Text>
-            <TextInput style={styles.input} value={title} onChangeText={setTitle}
-              placeholder={t(language, 'titlePlaceholder')}
-              placeholderTextColor={colors.textMuted} />
-
-            <Text style={styles.label}>{t(language, 'category')}</Text>
-            <View style={styles.categoryRow}>
-              {CATEGORIES.map(c => (
-                <TouchableOpacity key={c.key}
-                  style={[styles.categoryBtn, category === c.key && styles.categoryBtnActive]}
-                  onPress={() => setCategory(c.key)}>
-                  <Text style={styles.categoryIcon}>{c.icon}</Text>
-                  <Text style={[styles.categoryLabel, category === c.key && styles.categoryLabelActive]}>
-                    {c.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.label}>{t(language, 'description')}</Text>
-            <TextInput style={[styles.input, styles.textArea]}
-              value={description} onChangeText={setDescription}
-              placeholder={t(language, 'descriptionPlaceholder')}
-              placeholderTextColor={colors.textMuted} multiline numberOfLines={3} />
-
-            <Text style={styles.label}>{t(language, 'price')}</Text>
-            <TextInput style={styles.input} value={price} onChangeText={setPrice}
-              placeholder={t(language, 'pricePlaceholder')}
-              placeholderTextColor={colors.textMuted} />
-
-            <Text style={styles.label}>
-              {language === 'hr' ? 'Fotografija' : 'Photo'}
-            </Text>
-            <View style={styles.photoRow}>
-              <TouchableOpacity style={styles.photoBtn} onPress={handlePickImage}>
-                <Text style={styles.photoBtnText}>🖼️ {language === 'hr' ? 'Galerija' : 'Gallery'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto}>
-                <Text style={styles.photoBtnText}>📷 {language === 'hr' ? 'Kamera' : 'Camera'}</Text>
-              </TouchableOpacity>
-            </View>
-            {image && (
-              <View style={styles.imagePreview}>
-                <Image source={{ uri: image }} style={styles.previewImage} />
-                <TouchableOpacity style={styles.removeImage} onPress={() => setImage(null)}>
-                  <Text style={styles.removeImageText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            {uploadingImg && (
-              <Text style={styles.uploadingText}>
-                {language === 'hr' ? 'Učitavanje fotografije...' : 'Uploading photo...'}
-              </Text>
-            )}
-
-            <Text style={styles.label}>{t(language, 'contactMethods')}</Text>
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>
-                {t(language, 'showPhone')} {profile?.phone
-                  ? `(${profile.phone})`
-                  : `(${t(language, 'notSet')})`}
-              </Text>
-              <Switch value={showPhone} onValueChange={setShowPhone}
-                trackColor={{ true: colors.gold }} thumbColor="#fff" />
-            </View>
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>
-                {t(language, 'showEmail')} ({auth.currentUser?.email})
-              </Text>
-              <Switch value={showEmail} onValueChange={setShowEmail}
-                trackColor={{ true: colors.gold }} thumbColor="#fff" />
-            </View>
-
-            {!profile?.phone && showPhone && (
-              <Text style={styles.phoneWarning}>{t(language, 'phoneWarning')}</Text>
-            )}
-
-            <TouchableOpacity
-              style={[styles.button, saving && styles.buttonDisabled]}
-              onPress={handlePost} disabled={saving}>
-              {saving
-                ? <ActivityIndicator color={colors.background} />
-                : <Text style={styles.buttonText}>{t(language, 'postListing')}</Text>
-              }
-            </TouchableOpacity>
-
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Modal>
+      <PostListingModal
+        visible={showForm}
+        onClose={() => setShowForm(false)}
+        language={language}
+        profile={profile}
+        userId={auth.currentUser.uid}
+        userEmail={auth.currentUser?.email}
+        onPosted={loadData}
+      />
 
     </View>
   );
@@ -441,9 +260,6 @@ const styles = StyleSheet.create({
                         backgroundColor: colors.surface,
                         borderBottomWidth: 1, borderBottomColor: colors.border },
   headerTitle:        { fontSize: 20, color: colors.gold, fontWeight: '700' },
-  postBtn:            { backgroundColor: colors.gold, borderRadius: 8,
-                        paddingVertical: 6, paddingHorizontal: 14 },
-  postBtnText:        { color: colors.background, fontWeight: '700', fontSize: 14 },
   tabs:               { flexDirection: 'row', backgroundColor: colors.surface,
                         borderBottomWidth: 1, borderBottomColor: colors.border },
   tab:                { flex: 1, paddingVertical: 12, alignItems: 'center' },
@@ -492,51 +308,6 @@ const styles = StyleSheet.create({
   supplierSpecialty:  { fontSize: 13, color: colors.textMuted,
                         lineHeight: 19, marginBottom: 4 },
   supplierUrl:        { fontSize: 11, color: colors.textMuted, fontStyle: 'italic' },
-  modal:              { flex: 1, backgroundColor: colors.background },
-  modalContent:       { padding: 24, paddingBottom: 60 },
-  modalHeader:        { flexDirection: 'row', justifyContent: 'space-between',
-                        alignItems: 'center', marginBottom: 24 },
-  modalTitle:         { fontSize: 22, color: colors.gold, fontWeight: '700' },
-  modalClose:         { fontSize: 20, color: colors.textMuted, padding: 4 },
-  label:              { fontSize: 12, color: colors.textMuted,
-                        textTransform: 'uppercase', letterSpacing: 1,
-                        marginBottom: 6, marginTop: 16 },
-  input:              { backgroundColor: colors.surface, borderWidth: 1,
-                        borderColor: colors.border, borderRadius: 8,
-                        paddingHorizontal: 14, paddingVertical: 12,
-                        color: colors.textPrimary, fontSize: 15 },
-  textArea:           { height: 90, textAlignVertical: 'top' },
-  photoRow:           { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  photoBtn:           { flex: 1, backgroundColor: colors.surfaceDeep, borderWidth: 1,
-                        borderColor: colors.border, borderRadius: 8,
-                        paddingVertical: 10, alignItems: 'center' },
-  photoBtnText:       { color: colors.textPrimary, fontSize: 13 },
-  imagePreview:       { position: 'relative', marginBottom: 8 },
-  previewImage:       { width: '100%', height: 180, borderRadius: 8 },
-  removeImage:        { position: 'absolute', top: 8, right: 8,
-                        backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12,
-                        width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
-  removeImageText:    { color: '#fff', fontSize: 14 },
-  uploadingText:      { color: colors.textMuted, fontSize: 12,
-                        fontStyle: 'italic', marginBottom: 8 },
-  categoryRow:        { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  categoryBtn:        { alignItems: 'center', paddingVertical: 8, paddingHorizontal: 10,
-                        borderRadius: 8, backgroundColor: colors.surfaceDeep,
-                        borderWidth: 1, borderColor: colors.border, minWidth: 70 },
-  categoryBtnActive:  { borderColor: colors.gold },
-  categoryIcon:       { fontSize: 20, marginBottom: 2 },
-  categoryLabel:      { fontSize: 11, color: colors.textMuted },
-  categoryLabelActive:{ color: colors.gold },
-  toggleRow:          { flexDirection: 'row', justifyContent: 'space-between',
-                        alignItems: 'center', backgroundColor: colors.surface,
-                        borderRadius: 8, borderWidth: 1, borderColor: colors.border,
-                        padding: 12, marginBottom: 8 },
-  toggleLabel:        { fontSize: 13, color: colors.textPrimary, flex: 1 },
-  phoneWarning:       { fontSize: 12, color: '#c8902a', marginTop: 4 },
-  button:             { backgroundColor: colors.gold, borderRadius: 8,
-                        paddingVertical: 14, alignItems: 'center', marginTop: 24 },
-  buttonDisabled:     { opacity: 0.6 },
-  buttonText:         { color: colors.background, fontWeight: '700', fontSize: 16 },
   listingImage:       { width: '100%', height: 160, borderRadius: 8,
                         marginBottom: 10 },
 });

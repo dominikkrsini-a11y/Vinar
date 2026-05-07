@@ -6,127 +6,15 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
-import Constants from 'expo-constants';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
 import { getUserProfile, getWines, getEntries } from '../firebase/firestore';
-import { winemakerKnowledge } from '../data/winemakerKnowledge';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
-
-const ANTHROPIC_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY 
-  || Constants.expoConfig?.extra?.anthropicApiKey;
-
-const buildSystemPrompt = (profile, wines, entries) => {
-  const wineList = wines.map(w => {
-    const wineEntries = entries[w.id] || [];
-    const entryText = wineEntries.slice(0, 5).map(e => {
-      if (e.type === 'fermentation') {
-        return `  - Fermentation (${e.createdAt?.slice(0,10)}): temp ${e.temperature || '?'}°C, density ${e.density || '?'}, sugar ${e.sugar || '?'}${e.ph ? `, pH ${e.ph}` : ''}${e.yeast ? `, yeast: ${e.yeast}` : ''}`;
-      }
-      if (e.type === 'sulfur') {
-        return `  - SO₂ addition (${e.createdAt?.slice(0,10)}): ${e.amount || '?'} g/hL, product: ${e.product || '?'}${e.freeSo2 ? `, free SO₂ before: ${e.freeSo2} ppm` : ''}${e.ph ? `, pH ${e.ph}` : ''}`;
-      }
-      return `  - Note (${e.createdAt?.slice(0,10)}): ${e.notes || ''}`;
-    }).join('\n');
-    return `Wine: ${w.name} (${w.type || ''}, ${w.grape || ''}, ${w.vintage || ''}${w.volume ? `, ${w.volume}L` : ''})
-${wineEntries.length > 0 ? 'Recent logbook entries:\n' + entryText : 'No logbook entries yet.'}`;
-  }).join('\n\n');
-
-  return `You are a professional winemaking assistant for small Croatian wine producers.
-You speak both English and Croatian — always respond in the same language the user writes in.
-You are helping ${profile?.firstName || 'a winemaker'} ${profile?.lastName || ''} from ${profile?.wineryName || 'their winery'} in ${profile?.region || 'Croatia'}.
-
-WINEMAKER'S CURRENT WINES AND LOGBOOK:
-${wineList || 'No wines added yet.'}
-
-YOUR ROLE:
-- Give specific, practical advice based on the user's actual wines and logbook data
-- Always ask follow-up questions before recommending yeasts or products
-- Reference their specific wines when relevant
-- Recommend only products available from Croatian suppliers
-- Always recommend lab testing for certified results
-- If you notice something concerning in their logbook data, mention it proactively
-
-APP NAVIGATION HELP:
-If user asks how to use the app, explain clearly:
-- "Kako dodati vino / How to add wine" → tap dashboard → tap Add Wine card
-- "Kako dodati unos / How to add entry" → tap a wine → tap + button bottom right
-- "Kako koristiti kalkulator / How to use calculator" → tap Calculator tab
-- "Kako objaviti oglas / How to post listing" → tap Marketplace → tap + Objavi
-- "Kako promijeniti jezik / How to change language" → tap Profile tab → Language section
-
-IMAGE ANALYSIS — When user sends a photo:
-
-PRODUCT LABELS:
-- Read all visible text carefully
-- Identify the product type (yeast, enzyme, fining agent, SO₂ product, nutrient, etc.)
-- Extract: product name, active ingredient, manufacturer
-- Calculate correct dosage for the user's wine volume if they mention it
-- Warn about any incompatibilities or timing requirements
-- Common Croatian/EU products: Vinobran (potassium metabisulfite), Vinostab (CMC), various Lallemand/Erbslöh/Lamothe products
-
-VINEYARD PHOTOS — DISEASES:
-- Peronospora (Downy mildew): Yellow oil spots on upper leaf, white fungal growth underneath. Treat with copper-based products.
-- Oidium (Powdery mildew): White powdery coating on leaves, shoots, grapes. Treat with sulfur.
-- Botrytis (Grey rot): Grey fuzzy mold on grapes, brown soft spots. Remove affected bunches immediately.
-- Black rot (Crna trulež): Brown circular spots with black dots on leaves, mummified black grapes.
-- Phomopsis: Dark lesions at base of shoots in spring.
-- Eutypa: Dead arm, fan-shaped yellowing.
-
-VINEYARD PHOTOS — NUTRITION DEFICIENCIES:
-- Yellow leaves with green veins (interveinal chlorosis) → Iron or Manganese deficiency
-- General yellowing of older leaves → Nitrogen deficiency
-- Purple/red coloration on leaves → Phosphorus deficiency
-- Brown leaf edges → Potassium deficiency or drought stress
-- Small distorted leaves → Zinc deficiency
-
-VINEYARD PHOTOS — PRUNING:
-- Assess cut quality — clean cuts heal faster
-- Check for correct bud count per cane
-- Identify variety-specific training systems (Dalmatian varieties often use Guyot or local systems)
-- Flag any signs of wood disease at pruning cuts
-
-HARVEST READINESS:
-- Assess grape color, berry firmness, seed color (green→brown = ripe)
-- Look for signs of disease or botrytis
-- Estimate ripeness stage
-
-DALMATIAN VARIETIES CONTEXT:
-- Grk: Sandy soils Lumbarda, female flowers, pollinated by Plavac Mali, high sugar/acid balance, bitter almond finish
-- Pošip: Korčula, high alcohol, viscous, citrus/apricot, ages well
-- Plavac Mali: Thick skin, late ripening, high tannin/alcohol, uneven ripening common
-- Babić: Primošten, high acidity, Marasca cherry, granite minerality
-- Teran: Istria, iron-rich soils, high acidity, raspberry/iron profile
-- Malvazija: Istria, acacia blossom, stone fruit, bitter almond
-- Graševina: Continental, green apple/chamomile, versatile
-
-YEAST RECOMMENDATIONS:
-- Grk: Lalvin QA23 or Fermivin TS28 (Pa-vin) — preserves mineral/almond character
-- Pošip: Lalvin ICV D-47 or Fermivin 4F9 for body; QA23 for fresh style
-- Plavac Mali: Uvaferm BDX (standard); Siha 10 Red Roman for dark chocolate/ripe fruit
-- Babić: Uvaferm BDX or Uvaferm 299
-- Teran: Lalvin BDX for still; EnartisFerm Perlage for sparkling
-
-CROATIAN SUPPLIERS:
-1. Pa-vin — pavin.hr — Lallemand yeasts, DIAM corks, equipment (Jastrebarsko)
-2. Horvat Univerzal — vinarska-oprema.com — processing, filtration, lab (Varaždin)
-3. Kokot Eno — kokoteno.hr — Lamothe-Abiet products, barrels, cellar tools (Jastrebarsko)
-4. Vinoartis — vinoartis.hr — enology, viticulture, lab analysis (Višnjan)
-5. Letina Inox — letina.com — stainless steel tanks all sizes (Čakovec)
-6. Poljocentar — poljocentar.hr — retail, hobbyist supplies (national)
-
-IMPORTANT RULES:
-- Always ask what style before recommending yeast
-- Never recommend yeast without knowing fermentation temperature
-- For SO₂ always reference logbook data if available
-- Do not give medical advice
-- Recommend lab testing for complex problems
-- Always mention which Croatian supplier carries recommended products
-- For oxidation questions: consider wine type, temperature, tank fullness, fermentation stage
-
-${winemakerKnowledge}`;
-};
+import { buildSystemPrompt } from '../services/assistant/prompt';
+import { sendAssistantMessage, getAssistantBaseUrl } from '../services/assistant/client';
+import { reportError } from '../utils/reportError';
+import { Chip } from '../components/ui/Chip';
 
 export default function AssistantScreen() {
   const { language } = useContext(LanguageContext);
@@ -139,7 +27,7 @@ export default function AssistantScreen() {
   const [entries,     setEntries]     = useState({});
   const [pendingImage, setPendingImage] = useState(null);
   const scrollRef = useRef(null);
-  const dbgRunIdRef = useRef(`run_${Date.now()}_${Math.random().toString(16).slice(2)}`);
+  const assistantBaseUrl = getAssistantBaseUrl();
 
   useEffect(() => { loadContext(); }, []);
 
@@ -172,9 +60,6 @@ export default function AssistantScreen() {
   };
 
   const handleCamera = async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7448/ingest/2aefacc4-8e4c-4680-a3a4-6e8a6f5530a7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e6554b'},body:JSON.stringify({sessionId:'e6554b',runId:dbgRunIdRef.current,hypothesisId:'H3',location:'AssistantScreen.js:handleCamera:start',message:'handleCamera pressed',data:{},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(
@@ -188,9 +73,6 @@ export default function AssistantScreen() {
       quality: 0.6,
     });
     if (!result.canceled) {
-      // #region agent log
-      fetch('http://127.0.0.1:7448/ingest/2aefacc4-8e4c-4680-a3a4-6e8a6f5530a7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e6554b'},body:JSON.stringify({sessionId:'e6554b',runId:dbgRunIdRef.current,hypothesisId:'H3',location:'AssistantScreen.js:handleCamera:asset',message:'camera asset selected',data:{uri:result?.assets?.[0]?.uri||null,canceled:result?.canceled},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       setPendingImage(result.assets[0]);
     }
   };
@@ -203,26 +85,15 @@ export default function AssistantScreen() {
   };
 
   const sendMessage = async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7448/ingest/2aefacc4-8e4c-4680-a3a4-6e8a6f5530a7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e6554b'},body:JSON.stringify({sessionId:'e6554b',runId:dbgRunIdRef.current,hypothesisId:'H1',location:'AssistantScreen.js:sendMessage:enter',message:'sendMessage called',data:{hasText:!!input.trim(),hasPendingImage:!!pendingImage,loading,pendingImageUri:pendingImage?.uri||null},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     if ((!input.trim() && !pendingImage) || loading) return;
 
     const userContent = [];
     let displayImage = null;
 
     if (pendingImage) {
-      console.log('Converting image to base64...');
       displayImage = pendingImage.uri;
       try {
-        // #region agent log
-        fetch('http://127.0.0.1:7448/ingest/2aefacc4-8e4c-4680-a3a4-6e8a6f5530a7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e6554b'},body:JSON.stringify({sessionId:'e6554b',runId:dbgRunIdRef.current,hypothesisId:'H2',location:'AssistantScreen.js:sendMessage:beforeBase64',message:'starting base64 conversion',data:{uri:pendingImage?.uri||null},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         const base64data = await imageToBase64(pendingImage.uri);
-        console.log('Base64 length:', base64data?.length);
-        // #region agent log
-        fetch('http://127.0.0.1:7448/ingest/2aefacc4-8e4c-4680-a3a4-6e8a6f5530a7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e6554b'},body:JSON.stringify({sessionId:'e6554b',runId:dbgRunIdRef.current,hypothesisId:'H2',location:'AssistantScreen.js:sendMessage:afterBase64',message:'base64 conversion finished',data:{len:base64data?.length||0},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         userContent.push({
           type: 'image',
           source: {
@@ -232,10 +103,7 @@ export default function AssistantScreen() {
           },
         });
       } catch (imgError) {
-        console.log('Image conversion error:', imgError);
-        // #region agent log
-        fetch('http://127.0.0.1:7448/ingest/2aefacc4-8e4c-4680-a3a4-6e8a6f5530a7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e6554b'},body:JSON.stringify({sessionId:'e6554b',runId:dbgRunIdRef.current,hypothesisId:'H2',location:'AssistantScreen.js:sendMessage:base64Error',message:'base64 conversion error',data:{name:imgError?.name||null,message:String(imgError?.message||imgError||'')},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
+        reportError(imgError, { screen: 'Assistant', action: 'imageToBase64' });
       }
     }
 
@@ -256,35 +124,17 @@ export default function AssistantScreen() {
     setLoading(true);
 
     try {
-      console.log('sendMessage started, pendingImage:', pendingImage?.uri);
-      // #region agent log
-      fetch('http://127.0.0.1:7448/ingest/2aefacc4-8e4c-4680-a3a4-6e8a6f5530a7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e6554b'},body:JSON.stringify({sessionId:'e6554b',runId:dbgRunIdRef.current,hypothesisId:'H4',location:'AssistantScreen.js:sendMessage:beforeFetch',message:'about to call Anthropic API',data:{contentTypes:userContent.map(c=>c.type),hasDisplayImage:!!displayImage},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       const apiMessages = newMessages.map(msg => ({
         role: msg.role,
         content: msg.content,
       }));
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type':      'application/json',
-          'x-api-key':         ANTHROPIC_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model:      'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
-          system:     buildSystemPrompt(profile, wines, entries),
-          messages:   apiMessages,
-        }),
+      const data = await sendAssistantMessage({
+        baseUrl: assistantBaseUrl,
+        model: 'claude-3-5-haiku-latest',
+        max_tokens: 1024,
+        system: buildSystemPrompt(profile, wines, entries),
+        messages: apiMessages,
       });
-
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message);
-      // #region agent log
-      fetch('http://127.0.0.1:7448/ingest/2aefacc4-8e4c-4680-a3a4-6e8a6f5530a7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e6554b'},body:JSON.stringify({sessionId:'e6554b',runId:dbgRunIdRef.current,hypothesisId:'H4',location:'AssistantScreen.js:sendMessage:afterFetch',message:'Anthropic API success',data:{hasContent:!!data?.content?.[0]?.text},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
 
       setMessages(prev => [...prev, {
         role:    'assistant',
@@ -295,10 +145,13 @@ export default function AssistantScreen() {
         role:    'assistant',
         content: [{ type: 'text', text: t(language, 'errorMsg') }],
       }]);
-      console.log('API error:', e);
-      // #region agent log
-      fetch('http://127.0.0.1:7448/ingest/2aefacc4-8e4c-4680-a3a4-6e8a6f5530a7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e6554b'},body:JSON.stringify({sessionId:'e6554b',runId:dbgRunIdRef.current,hypothesisId:'H4',location:'AssistantScreen.js:sendMessage:apiError',message:'Anthropic API error',data:{name:e?.name||null,message:String(e?.message||e||'')},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
+      reportError(e, { screen: 'Assistant', action: 'sendMessage', assistantBaseUrl });
+      Alert.alert(
+        language === 'hr' ? 'Greška' : 'Error',
+        language === 'hr'
+          ? 'Ne mogu kontaktirati pomoćnika. Provjerite da server radi.'
+          : 'Could not reach the assistant. Please check the local server is running.'
+      );
     } finally {
       setLoading(false);
     }
@@ -369,10 +222,7 @@ export default function AssistantScreen() {
                   t(language, 'suggestion3'),
                   t(language, 'suggestion4'),
                 ].map((s, i) => (
-                  <TouchableOpacity key={i} style={styles.chip}
-                    onPress={() => setInput(s)}>
-                    <Text style={styles.chipText}>{s}</Text>
-                  </TouchableOpacity>
+                  <Chip key={i} label={s} onPress={() => setInput(s)} />
                 ))}
               </View>
             </View>
@@ -444,10 +294,6 @@ const styles = StyleSheet.create({
                             textAlign: 'center', lineHeight: 20, marginBottom: 20 },
   suggestions:            { flexDirection: 'row', flexWrap: 'wrap',
                             gap: 8, justifyContent: 'center' },
-  chip:                   { backgroundColor: colors.surface, borderRadius: 16,
-                            borderWidth: 1, borderColor: colors.border,
-                            paddingVertical: 6, paddingHorizontal: 12 },
-  chipText:               { fontSize: 13, color: colors.textMuted },
   bubbleWrapper:          { marginBottom: 10 },
   bubbleWrapperUser:      { alignItems: 'flex-end' },
   bubbleWrapperAssistant: { alignItems: 'flex-start' },
@@ -478,7 +324,7 @@ const styles = StyleSheet.create({
                             alignItems: 'center', justifyContent: 'center' },
   plusBtnText:            { fontSize: 24, color: colors.textMuted, lineHeight: 28 },
   input:                  { flex: 1, backgroundColor: colors.surfaceDeep,
-                            borderWidth: 1, borderColor: colors.border,
+                            borderWidth: 1, borderColor: colors.inputBorder,
                             borderRadius: 20, paddingHorizontal: 16,
                             paddingVertical: 10, color: colors.textPrimary,
                             fontSize: 15, maxHeight: 100 },

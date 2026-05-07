@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
                     textTransform: 'uppercase', letterSpacing: 1,
                     marginBottom: 6, marginTop: 16 },
   input:          { backgroundColor: colors.surface, borderWidth: 1,
-                    borderColor: colors.border, borderRadius: 8,
+                    borderColor: colors.inputBorder, borderRadius: 8,
                     paddingHorizontal: 14, paddingVertical: 12,
                     color: colors.textPrimary, fontSize: 15 },
   dropdown:       { backgroundColor: colors.surface, borderWidth: 1,

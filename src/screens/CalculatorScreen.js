@@ -6,33 +6,9 @@ import {
 import { colors } from '../theme/colors';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
-
-// ─── ABV HELPERS ────────────────────────────────────────────────────────────
-const correctSG = (sg, temp) => {
-  const sgDecimal = sg / 1000;
-  return sgDecimal + 0.00130 * (temp - 20);
-};
-
-const calculateABV = (ogRaw, ogTemp, fgRaw, fgTemp) => {
-  const og = correctSG(ogRaw, ogTemp);
-  const fg = correctSG(fgRaw, fgTemp);
-  return (og - fg) * 131.25;
-};
-
-// ─── SO2 HELPERS ────────────────────────────────────────────────────────────
-const getTargetFreeSO2 = (wineType, pH) => {
-  const molecularTarget = wineType === 'red' ? 0.5 : 0.8;
-  const ratio = 1 / (1 + Math.pow(10, pH - 1.81));
-  return Math.round(molecularTarget / ratio);
-};
-
-const calculateSO2Addition = (targetFree, currentFree, volume, so2Percent) => {
-  const so2Needed = targetFree - currentFree;
-  if (so2Needed <= 0) return { needed: 0, gPerHl: 0, totalGrams: 0 };
-  const gPerHl     = (so2Needed * 100) / (so2Percent * 10);
-  const totalGrams = gPerHl * (volume / 100);
-  return { needed: so2Needed, gPerHl: gPerHl.toFixed(2), totalGrams: totalGrams.toFixed(1) };
-};
+import { calculateABV, calculateSO2Addition, correctSG, getTargetFreeSO2 } from '../features/calculator/helpers';
+import { TabSwitcher } from '../features/calculator/components/TabSwitcher';
+import { CalcCard } from '../features/calculator/components/CalcCard';
 
 const TABS = ['ABV', 'SO₂'];
 
@@ -143,23 +119,18 @@ export default function CalculatorScreen({ navigation }) {
         <Text style={styles.title}>{t(language, 'calculators')}</Text>
 
         {/* Tab switcher */}
-        <View style={styles.tabs}>
-          {TABS.map(tab => (
-            <TouchableOpacity key={tab}
-              style={[styles.tab, activeTab === tab && styles.tabActive]}
-              onPress={() => setActiveTab(tab)}>
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab === 'ABV' ? `🍷 ${t(language, 'abvTitle')}` : `🧪 ${t(language, 'so2Title')}`}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <TabSwitcher
+          tabs={TABS}
+          activeTab={activeTab}
+          onChangeTab={setActiveTab}
+          renderLabel={(tab) =>
+            tab === 'ABV' ? `🍷 ${t(language, 'abvTitle')}` : `🧪 ${t(language, 'so2Title')}`
+          }
+        />
 
         {/* ── ABV TAB ── */}
         {activeTab === 'ABV' && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{t(language, 'abvTitle')}</Text>
-            <Text style={styles.cardSub}>{t(language, 'abvSub')}</Text>
+          <CalcCard title={t(language, 'abvTitle')} subtitle={t(language, 'abvSub')}>
 
             <Text style={styles.label}>{t(language, 'startingSG')}</Text>
             <View style={styles.row}>
@@ -215,14 +186,12 @@ export default function CalculatorScreen({ navigation }) {
                 <Text style={styles.warning}>{t(language, 'abvWarning')}</Text>
               </View>
             )}
-          </View>
+          </CalcCard>
         )}
 
         {/* ── SO2 TAB ── */}
         {activeTab === 'SO₂' && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{t(language, 'so2Title')}</Text>
-            <Text style={styles.cardSub}>{t(language, 'so2Sub')}</Text>
+          <CalcCard title={t(language, 'so2Title')} subtitle={t(language, 'so2Sub')}>
 
             <View style={styles.warningBox}>
               <Text style={styles.warningBoxText}>{t(language, 'so2Warning')}</Text>
@@ -361,7 +330,7 @@ export default function CalculatorScreen({ navigation }) {
                 <Text style={styles.warning}>{t(language, 'so2ResultWarning')}</Text>
               </View>
             )}
-          </View>
+          </CalcCard>
         )}
 
         {/* Reference tables button */}
@@ -405,7 +374,7 @@ const styles = StyleSheet.create({
                          marginBottom: 6, marginTop: 14 },
   row:                 { flexDirection: 'row', gap: 10 },
   input:               { backgroundColor: colors.surfaceDeep, borderWidth: 1,
-                         borderColor: colors.border, borderRadius: 8,
+                         borderColor: colors.inputBorder, borderRadius: 8,
                          paddingHorizontal: 14, paddingVertical: 12,
                          color: colors.textPrimary, fontSize: 16 },
   inputLarge:          { flex: 1 },
