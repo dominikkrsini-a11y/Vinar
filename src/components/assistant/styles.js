@@ -1,0 +1,68 @@
+import { StyleSheet } from 'react-native';
+import { colors } from '../../theme/colors';
+
+export const assistantStyles = StyleSheet.create({
+  container:              { flex: 1, backgroundColor: colors.background },
+  center:                 { flex: 1, backgroundColor: colors.background,
+                            alignItems: 'center', justifyContent: 'center' },
+  header:                 { padding: 20, paddingTop: 52,
+                            backgroundColor: colors.surface,
+                            borderBottomWidth: 1, borderBottomColor: colors.border },
+  headerTitle:            { fontSize: 18, color: colors.gold, fontWeight: '700' },
+  headerSub:              { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+
+  // Message list
+  messages:               { flex: 1 },
+  messagesContent:        { padding: 16, paddingBottom: 8 },
+  welcome:                { alignItems: 'center', paddingTop: 20, paddingBottom: 10 },
+  welcomeTitle:           { fontSize: 20, color: colors.gold,
+                            fontWeight: '700', marginBottom: 8 },
+  welcomeText:            { fontSize: 14, color: colors.textMuted,
+                            textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  suggestions:            { flexDirection: 'row', flexWrap: 'wrap',
+                            gap: 8, justifyContent: 'center' },
+  bubbleWrapper:          { marginBottom: 10 },
+  bubbleWrapperUser:      { alignItems: 'flex-end' },
+  bubbleWrapperAssistant: { alignItems: 'flex-start' },
+  bubble:                 { maxWidth: '85%', borderRadius: 16, padding: 12 },
+  bubbleUser:             { backgroundColor: colors.gold, borderBottomRightRadius: 4 },
+  bubbleAssistant:        { backgroundColor: colors.surface, borderBottomLeftRadius: 4,
+                            borderWidth: 1, borderColor: colors.border,
+                            minWidth: 50, alignItems: 'center' },
+  bubbleText:             { fontSize: 14, lineHeight: 20 },
+  bubbleTextUser:         { color: colors.background, fontWeight: '500' },
+  bubbleTextAssistant:    { color: colors.textPrimary },
+  chatImage:              { width: 220, height: 160, borderRadius: 12, marginBottom: 6 },
+
+  // Pending image preview
+  pendingImageContainer:  { margin: 12, position: 'relative', alignSelf: 'flex-end' },
+  pendingImage:           { width: 80, height: 80, borderRadius: 8 },
+  removePending:          { position: 'absolute', top: -6, right: -6,
+                            backgroundColor: colors.surface, borderRadius: 10,
+                            width: 20, height: 20, alignItems: 'center',
+                            justifyContent: 'center', borderWidth: 1,
+                            borderColor: colors.border },
+  removePendingText:      { color: colors.textMuted, fontSize: 12 },
+
+  // Input bar
+  inputRow:               { flexDirection: 'row', padding: 12,
+                            backgroundColor: colors.surface,
+                            borderTopWidth: 1, borderTopColor: colors.border,
+                            gap: 8, alignItems: 'flex-end' },
+  plusBtn:                { width: 42, height: 42, borderRadius: 21,
+                            backgroundColor: colors.surfaceDeep,
+                            borderWidth: 1, borderColor: colors.border,
+                            alignItems: 'center', justifyContent: 'center' },
+  plusBtnText:            { fontSize: 24, color: colors.textMuted, lineHeight: 28 },
+  input:                  { flex: 1, backgroundColor: colors.surfaceDeep,
+                            borderWidth: 1, borderColor: colors.inputBorder,
+                            borderRadius: 20, paddingHorizontal: 16,
+                            paddingVertical: 10, color: colors.textPrimary,
+                            fontSize: 15, maxHeight: 100 },
+  sendBtn:                { width: 42, height: 42, borderRadius: 21,
+                            backgroundColor: colors.gold,
+                            alignItems: 'center', justifyContent: 'center' },
+  sendBtnDisabled:        { opacity: 0.4 },
+  sendBtnText:            { fontSize: 20, color: colors.background, fontWeight: '700' },
+});
+
