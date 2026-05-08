@@ -1,4 +1,5 @@
 import { imageUriToBase64 } from './imageBase64';
+import { Alert } from 'react-native';
 
 export async function buildUserContent({ language, inputText, pendingImage, reportError }) {
   const userContent = [];
@@ -18,6 +19,12 @@ export async function buildUserContent({ language, inputText, pendingImage, repo
       });
     } catch (e) {
       reportError?.(e, { screen: 'Assistant', action: 'imageUriToBase64' });
+      Alert.alert(
+        language === 'hr' ? 'Greška' : 'Error',
+        language === 'hr'
+          ? 'Ne mogu priložiti fotografiju. Pokušajte ponovno.'
+          : 'Could not attach the photo. Please try again.'
+      );
     }
   }
 

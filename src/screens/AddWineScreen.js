@@ -9,6 +9,7 @@ import { auth } from '../firebase/config';
 import { addWine } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
+import { reportError } from '../utils/reportError';
 
 const WINE_TYPES = ['Red', 'White', 'Rosé', 'Orange', 'Sparkling', 'Dessert'];
 
@@ -58,7 +59,13 @@ export default function AddWineScreen({ navigation }) {
         { text: t(language, 'ok'), onPress: () => navigation.goBack() }
       ]);
     } catch (e) {
-      Alert.alert(t(language, 'error'), 'Could not save wine.');
+      reportError(e, { screen: 'AddWine', action: 'addWine' });
+      Alert.alert(
+        language === 'hr' ? 'Greška' : 'Error',
+        language === 'hr'
+          ? 'Ne mogu spremiti vino. Provjerite internet vezu i pokušajte ponovno.'
+          : 'Could not save wine. Please check your connection and try again.'
+      );
     } finally {
       setSaving(false);
     }

@@ -7,6 +7,7 @@ import { colors } from '../theme/colors';
 import { onAuthChange } from '../firebase/auth';
 import { getUserProfile } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
+import { reportError } from '../utils/reportError';
 
 import LoginScreen       from '../screens/LoginScreen';
 import DashboardScreen   from '../screens/DashboardScreen';
@@ -101,6 +102,7 @@ export default function AppNavigator() {
           setNeedsLang(true);
         }
       } catch (e) {
+        reportError(e, { screen: 'AppNavigator', action: 'getUserProfileLanguage' });
         setNeedsLang(true);
       } finally {
         setCheckingLang(false);

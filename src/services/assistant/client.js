@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { reportError } from '../utils/reportError';
 
 const getDefaultBaseUrl = () => {
   return (
@@ -27,8 +28,14 @@ export async function sendAssistantMessage({
   let data;
   try {
     data = await response.json();
-  } catch {
-    const text = await response.text().catch(() => '');
+  } catch (e) {
+    reportError(e, { scope: 'assistantClient', action: 'parseJson', url });
+    let text = '';
+    try {
+      text = await response.text();
+    } catch (e2) {
+      reportError(e2, { scope: 'assistantClient', action: 'readTextFallback', url });
+    }
     throw new Error(text || 'Invalid server response.');
   }
 

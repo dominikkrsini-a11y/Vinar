@@ -9,6 +9,7 @@ import { auth } from '../firebase/config';
 import { updateWine } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
+import { reportError } from '../utils/reportError';
 
 const WINE_TYPES = ['Red', 'White', 'Rosé', 'Orange', 'Sparkling', 'Dessert'];
 
@@ -60,7 +61,13 @@ export default function EditWineScreen({ route, navigation }) {
         { text: t(language, 'ok'), onPress: () => navigation.goBack() }
       ]);
     } catch (e) {
-      Alert.alert(t(language, 'error'), 'Could not update wine.');
+      reportError(e, { screen: 'EditWine', action: 'updateWine', wineId: wine?.id });
+      Alert.alert(
+        language === 'hr' ? 'Greška' : 'Error',
+        language === 'hr'
+          ? 'Ne mogu spremiti promjene vina. Pokušajte ponovno.'
+          : 'Could not save wine changes. Please try again.'
+      );
     } finally {
       setSaving(false);
     }
