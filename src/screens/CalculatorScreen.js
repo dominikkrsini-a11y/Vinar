@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TouchableOpacity,
   StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { colors } from '../theme/colors';
@@ -9,6 +9,8 @@ import { t } from '../i18n/translations';
 import { calculateABV, calculateSO2Addition, correctSG, getTargetFreeSO2 } from '../features/calculator/helpers';
 import { TabSwitcher } from '../features/calculator/components/TabSwitcher';
 import { CalcCard } from '../features/calculator/components/CalcCard';
+import { AbvCalculatorTab } from '../features/calculator/components/AbvCalculatorTab';
+import { So2CalculatorTab } from '../features/calculator/components/So2CalculatorTab';
 
 const TABS = ['ABV', 'SO₂'];
 
@@ -131,205 +133,60 @@ export default function CalculatorScreen({ navigation }) {
         {/* ── ABV TAB ── */}
         {activeTab === 'ABV' && (
           <CalcCard title={t(language, 'abvTitle')} subtitle={t(language, 'abvSub')}>
-
-            <Text style={styles.label}>{t(language, 'startingSG')}</Text>
-            <View style={styles.row}>
-              <TextInput style={[styles.input, styles.inputLarge]}
-                value={startSG} onChangeText={setStartSG}
-                placeholder="e.g. 1108" placeholderTextColor={colors.textMuted}
-                keyboardType="decimal-pad" />
-              <TextInput style={[styles.input, styles.inputSmall]}
-                value={startTemp} onChangeText={setStartTemp}
-                placeholder="°C" placeholderTextColor={colors.textMuted}
-                keyboardType="decimal-pad" />
-            </View>
-
-            <Text style={styles.label}>{t(language, 'finishingSG')}</Text>
-            <View style={styles.row}>
-              <TextInput style={[styles.input, styles.inputLarge]}
-                value={endSG} onChangeText={setEndSG}
-                placeholder="e.g. 994" placeholderTextColor={colors.textMuted}
-                keyboardType="decimal-pad" />
-              <TextInput style={[styles.input, styles.inputSmall]}
-                value={endTemp} onChangeText={setEndTemp}
-                placeholder="°C" placeholderTextColor={colors.textMuted}
-                keyboardType="decimal-pad" />
-            </View>
-
-            {abvError ? <Text style={styles.error}>{abvError}</Text> : null}
-
-            <TouchableOpacity style={styles.button} onPress={handleABV}>
-              <Text style={styles.buttonText}>{t(language, 'calculate')}</Text>
-            </TouchableOpacity>
-            {abvResult && (
-              <TouchableOpacity style={styles.resetBtn}
-                onPress={() => { setStartSG(''); setStartTemp('');
-                  setEndSG(''); setEndTemp(''); setAbvResult(null); }}>
-                <Text style={styles.resetText}>{t(language, 'reset')}</Text>
-              </TouchableOpacity>
-            )}
-
-            {abvResult && (
-              <View style={styles.resultCard}>
-                <Text style={styles.resultLabel}>{t(language, 'estimatedABV')}</Text>
-                <Text style={styles.resultValue}>{abvResult.abv}%</Text>
-                <View style={styles.divider} />
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>{t(language, 'correctedOG')}</Text>
-                  <Text style={styles.detailValue}>{abvResult.correctedOG}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>{t(language, 'correctedFG')}</Text>
-                  <Text style={styles.detailValue}>{abvResult.correctedFG}</Text>
-                </View>
-                <View style={styles.divider} />
-                <Text style={styles.warning}>{t(language, 'abvWarning')}</Text>
-              </View>
-            )}
+            <AbvCalculatorTab
+              language={language}
+              t={t}
+              styles={styles}
+              startSG={startSG}
+              setStartSG={setStartSG}
+              startTemp={startTemp}
+              setStartTemp={setStartTemp}
+              endSG={endSG}
+              setEndSG={setEndSG}
+              endTemp={endTemp}
+              setEndTemp={setEndTemp}
+              abvError={abvError}
+              abvResult={abvResult}
+              onCalculate={handleABV}
+              onReset={() => {
+                setStartSG(''); setStartTemp('');
+                setEndSG(''); setEndTemp(''); setAbvResult(null);
+              }}
+            />
           </CalcCard>
         )}
 
         {/* ── SO2 TAB ── */}
         {activeTab === 'SO₂' && (
           <CalcCard title={t(language, 'so2Title')} subtitle={t(language, 'so2Sub')}>
-
-            <View style={styles.warningBox}>
-              <Text style={styles.warningBoxText}>{t(language, 'so2Warning')}</Text>
-            </View>
-
-            <Text style={styles.label}>{t(language, 'wineTypeCal')}</Text>
-            <View style={styles.typeRow}>
-              {WINE_TYPES_SO2.map(wt => (
-                <TouchableOpacity key={wt.key}
-                  style={[styles.typeBtn, wineType === wt.key && styles.typeBtnActive]}
-                  onPress={() => setWineType(wt.key)}>
-                  <Text style={[styles.typeBtnText, wineType === wt.key && styles.typeBtnTextActive]}>
-                    {wt.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.label}>{t(language, 'winePH')}</Text>
-            <TextInput style={styles.input} value={pH} onChangeText={setPH}
-              placeholder="e.g. 3.4" placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad" />
-
-            <Text style={styles.label}>{t(language, 'currentFreeSO2')}</Text>
-            <TextInput style={styles.input} value={currentSO2} onChangeText={setCurrentSO2}
-              placeholder="e.g. 12" placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad" />
-
-            <Text style={styles.label}>{t(language, 'volumeWine')}</Text>
-            <TextInput style={styles.input} value={volume} onChangeText={setVolume}
-              placeholder="e.g. 500" placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad" />
-
-            <Text style={styles.label}>{t(language, 'product')}</Text>
-            <View style={styles.productRow}>
-              {PRODUCTS.map(p => (
-                <TouchableOpacity key={p.key}
-                  style={[styles.productBtn, product === p.key && styles.productBtnActive]}
-                  onPress={() => {
-                    setProduct(p.key);
-                    if (p.unit === 'pct')    setSo2Pct(String(p.defaultPct));
-                    if (p.unit === 'tablet') setTabletMg(String(p.defaultMg));
-                  }}>
-                  <Text style={[styles.productBtnText, product === p.key && styles.productBtnTextActive]}>
-                    {p.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {(product === 'kmbs' || product === 'blend' || product === 'liquid') && (
-              <>
-                <Text style={styles.label}>{t(language, 'so2Content')}</Text>
-                <TextInput style={styles.input} value={so2Pct} onChangeText={setSo2Pct}
-                  placeholder="e.g. 57" placeholderTextColor={colors.textMuted}
-                  keyboardType="decimal-pad" editable={product !== 'liquid'} />
-              </>
-            )}
-            {product === 'campden' && (
-              <>
-                <Text style={styles.label}>{t(language, 'mgPerTablet')}</Text>
-                <TextInput style={styles.input} value={tabletMg} onChangeText={setTabletMg}
-                  placeholder="e.g. 440" placeholderTextColor={colors.textMuted}
-                  keyboardType="decimal-pad" />
-              </>
-            )}
-
-            {so2Error ? <Text style={styles.error}>{so2Error}</Text> : null}
-
-            <TouchableOpacity style={styles.button} onPress={handleSO2}>
-              <Text style={styles.buttonText}>{t(language, 'calculate')}</Text>
-            </TouchableOpacity>
-            {so2Result && (
-              <TouchableOpacity style={styles.resetBtn}
-                onPress={() => { setPH(''); setCurrentSO2('');
-                  setVolume(''); setSo2Result(null); setSo2Error(''); }}>
-                <Text style={styles.resetText}>{t(language, 'reset')}</Text>
-              </TouchableOpacity>
-            )}
-
-            {so2Result && (
-              <View style={styles.resultCard}>
-                {so2Result.sufficient ? (
-                  <>
-                    <Text style={styles.resultLabel}>Status</Text>
-                    <Text style={[styles.resultValue, { color: colors.green, fontSize: 24 }]}>
-                      {t(language, 'noAdditionNeeded')}
-                    </Text>
-                    <View style={styles.divider} />
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>{t(language, 'currentFreeSO2Label')}</Text>
-                      <Text style={styles.detailValue}>{so2Result.current} mg/L</Text>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>{t(language, 'targetFreeSO2')}</Text>
-                      <Text style={styles.detailValue}>{so2Result.target} mg/L</Text>
-                    </View>
-                  </>
-                ) : product === 'campden' ? (
-                  <>
-                    <Text style={styles.resultLabel}>Campden tablets</Text>
-                    <Text style={styles.resultValue}>{so2Result.tablets}</Text>
-                    <View style={styles.divider} />
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>{t(language, 'so2ToAdd')}</Text>
-                      <Text style={styles.detailValue}>{so2Result.so2Needed} mg/L</Text>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.resultLabel}>{t(language, 'productToAdd')}</Text>
-                    <Text style={styles.resultValue}>{so2Result.gPerHl} g/hL</Text>
-                    <Text style={[styles.resultValue, { fontSize: 28, marginTop: 4 }]}>
-                      {so2Result.totalGrams} {t(language, 'totalGrams')}
-                    </Text>
-                    <View style={styles.divider} />
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>{t(language, 'currentFreeSO2Label')}</Text>
-                      <Text style={styles.detailValue}>{so2Result.current} mg/L</Text>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>{t(language, 'targetFreeSO2')}</Text>
-                      <Text style={styles.detailValue}>{so2Result.target} mg/L</Text>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>{t(language, 'so2ToAdd')}</Text>
-                      <Text style={styles.detailValue}>{so2Result.needed} mg/L</Text>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>{t(language, 'productSO2Content')}</Text>
-                      <Text style={styles.detailValue}>{so2Result.pct}%</Text>
-                    </View>
-                  </>
-                )}
-                <View style={styles.divider} />
-                <Text style={styles.warning}>{t(language, 'so2ResultWarning')}</Text>
-              </View>
-            )}
+            <So2CalculatorTab
+              language={language}
+              t={t}
+              styles={styles}
+              WINE_TYPES_SO2={WINE_TYPES_SO2}
+              PRODUCTS={PRODUCTS}
+              wineType={wineType}
+              setWineType={setWineType}
+              pH={pH}
+              setPH={setPH}
+              currentSO2={currentSO2}
+              setCurrentSO2={setCurrentSO2}
+              volume={volume}
+              setVolume={setVolume}
+              product={product}
+              setProduct={setProduct}
+              so2Pct={so2Pct}
+              setSo2Pct={setSo2Pct}
+              tabletMg={tabletMg}
+              setTabletMg={setTabletMg}
+              so2Error={so2Error}
+              so2Result={so2Result}
+              onCalculate={handleSO2}
+              onReset={() => {
+                setPH(''); setCurrentSO2('');
+                setVolume(''); setSo2Result(null); setSo2Error('');
+              }}
+            />
           </CalcCard>
         )}
 
