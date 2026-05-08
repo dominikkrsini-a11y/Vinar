@@ -1,5 +1,6 @@
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { TextField } from '../../../components/ui/TextField';
+import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 
 export function AbvCalculatorTab({
   language,
@@ -24,49 +25,43 @@ export function AbvCalculatorTab({
     <>
       <Text style={styles.label}>{t(language, 'startingSG')}</Text>
       <View style={styles.row}>
-        <TextInput
-          style={[styles.input, styles.inputLarge]}
+        <TextField
+          style={styles.inputLarge}
           value={startSG}
           onChangeText={setStartSG}
           placeholder="e.g. 1108"
-          placeholderTextColor={colors.textMuted}
           keyboardType="decimal-pad"
         />
-        <TextInput
-          style={[styles.input, styles.inputSmall]}
+        <TextField
+          style={styles.inputSmall}
           value={startTemp}
           onChangeText={setStartTemp}
           placeholder="°C"
-          placeholderTextColor={colors.textMuted}
           keyboardType="decimal-pad"
         />
       </View>
 
       <Text style={styles.label}>{t(language, 'finishingSG')}</Text>
       <View style={styles.row}>
-        <TextInput
-          style={[styles.input, styles.inputLarge]}
+        <TextField
+          style={styles.inputLarge}
           value={endSG}
           onChangeText={setEndSG}
           placeholder="e.g. 994"
-          placeholderTextColor={colors.textMuted}
           keyboardType="decimal-pad"
         />
-        <TextInput
-          style={[styles.input, styles.inputSmall]}
+        <TextField
+          style={styles.inputSmall}
           value={endTemp}
           onChangeText={setEndTemp}
           placeholder="°C"
-          placeholderTextColor={colors.textMuted}
           keyboardType="decimal-pad"
         />
       </View>
 
       {abvError ? <Text style={styles.error}>{abvError}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={onCalculate}>
-        <Text style={styles.buttonText}>{t(language, 'calculate')}</Text>
-      </TouchableOpacity>
+      <PrimaryButton style={styles.button} onPress={onCalculate} label={t(language, 'calculate')} />
 
       {abvResult && (
         <TouchableOpacity style={styles.resetBtn} onPress={onReset}>

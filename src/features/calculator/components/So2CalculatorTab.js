@@ -1,5 +1,7 @@
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { colors } from '../../../theme/colors';
+import { TextField } from '../../../components/ui/TextField';
+import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 
 export function So2CalculatorTab({
   language,
@@ -51,32 +53,26 @@ export function So2CalculatorTab({
       </View>
 
       <Text style={styles.label}>{t(language, 'winePH')}</Text>
-      <TextInput
-        style={styles.input}
+      <TextField
         value={pH}
         onChangeText={setPH}
         placeholder="e.g. 3.4"
-        placeholderTextColor={colors.textMuted}
         keyboardType="decimal-pad"
       />
 
       <Text style={styles.label}>{t(language, 'currentFreeSO2')}</Text>
-      <TextInput
-        style={styles.input}
+      <TextField
         value={currentSO2}
         onChangeText={setCurrentSO2}
         placeholder="e.g. 12"
-        placeholderTextColor={colors.textMuted}
         keyboardType="decimal-pad"
       />
 
       <Text style={styles.label}>{t(language, 'volumeWine')}</Text>
-      <TextInput
-        style={styles.input}
+      <TextField
         value={volume}
         onChangeText={setVolume}
         placeholder="e.g. 500"
-        placeholderTextColor={colors.textMuted}
         keyboardType="decimal-pad"
       />
 
@@ -102,12 +98,10 @@ export function So2CalculatorTab({
       {(product === 'kmbs' || product === 'blend' || product === 'liquid') && (
         <>
           <Text style={styles.label}>{t(language, 'so2Content')}</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
             value={so2Pct}
             onChangeText={setSo2Pct}
             placeholder="e.g. 57"
-            placeholderTextColor={colors.textMuted}
             keyboardType="decimal-pad"
             editable={product !== 'liquid'}
           />
@@ -117,12 +111,10 @@ export function So2CalculatorTab({
       {product === 'campden' && (
         <>
           <Text style={styles.label}>{t(language, 'mgPerTablet')}</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
             value={tabletMg}
             onChangeText={setTabletMg}
             placeholder="e.g. 440"
-            placeholderTextColor={colors.textMuted}
             keyboardType="decimal-pad"
           />
         </>
@@ -130,9 +122,7 @@ export function So2CalculatorTab({
 
       {so2Error ? <Text style={styles.error}>{so2Error}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={onCalculate}>
-        <Text style={styles.buttonText}>{t(language, 'calculate')}</Text>
-      </TouchableOpacity>
+      <PrimaryButton style={styles.button} onPress={onCalculate} label={t(language, 'calculate')} />
 
       {so2Result && (
         <TouchableOpacity style={styles.resetBtn} onPress={onReset}>
