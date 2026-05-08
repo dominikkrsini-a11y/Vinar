@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator, Alert,
   KeyboardAvoidingView, Platform, Modal,
 } from 'react-native';
@@ -12,6 +12,9 @@ import { addEntry } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
+import { ScreenWrapper } from '../components/ui/ScreenWrapper';
+import { TextField } from '../components/ui/TextField';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -151,8 +154,8 @@ export default function AddEntryScreen({ route, navigation }) {
         </View>
       </Modal>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <ScreenWrapper style={styles.content}>
 
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>← {wine.name}</Text>
@@ -176,88 +179,102 @@ export default function AddEntryScreen({ route, navigation }) {
 
         {type === 'fermentation' && (
           <>
-            <Text style={styles.label}>{t(language, 'temperature')}</Text>
-            <TextInput style={styles.input} value={temperature}
+            <TextField
+              label={t(language, 'temperature')}
+              value={temperature}
               onChangeText={setTemperature}
               placeholder={t(language, 'tempPlaceholder')}
-              placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" />
+              editable={!saving}
+            />
 
-            <Text style={styles.label}>{t(language, 'density')}</Text>
-            <TextInput style={styles.input} value={density}
+            <TextField
+              label={t(language, 'density')}
+              value={density}
               onChangeText={setDensity}
               placeholder={t(language, 'densityPlaceholder')}
-              placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" />
+              editable={!saving}
+            />
 
-            <Text style={styles.label}>{t(language, 'sugar')}</Text>
-            <TextInput style={styles.input} value={sugar}
+            <TextField
+              label={t(language, 'sugar')}
+              value={sugar}
               onChangeText={setSugar}
               placeholder={t(language, 'sugarPlaceholder')}
-              placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" />
+              editable={!saving}
+            />
 
-            <Text style={styles.label}>pH</Text>
-            <TextInput style={styles.input} value={ph}
+            <TextField
+              label="pH"
+              value={ph}
               onChangeText={setPh}
               placeholder="e.g. 3.4"
-              placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" />
+              editable={!saving}
+            />
 
-            <Text style={styles.label}>
-              {language === 'hr' ? 'Soj kvasca' : 'Yeast Strain'}
-            </Text>
-            <TextInput style={styles.input} value={yeast}
+            <TextField
+              label={language === 'hr' ? 'Soj kvasca' : 'Yeast Strain'}
+              value={yeast}
               onChangeText={setYeast}
               placeholder="e.g. Lalvin QA23"
-              placeholderTextColor={colors.textMuted} />
+              editable={!saving}
+            />
           </>
         )}
 
         {type === 'sulfur' && (
           <>
-            <Text style={styles.label}>
-              {language === 'hr' ? 'Količina (g/hL)' : 'Amount (g/hL)'}
-            </Text>
-            <TextInput style={styles.input} value={amount}
+            <TextField
+              label={language === 'hr' ? 'Količina (g/hL)' : 'Amount (g/hL)'}
+              value={amount}
               onChangeText={setAmount}
               placeholder="e.g. 5"
-              placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" />
+              editable={!saving}
+            />
 
-            <Text style={styles.label}>{t(language, 'productUsed')}</Text>
-            <TextInput style={styles.input} value={product}
+            <TextField
+              label={t(language, 'productUsed')}
+              value={product}
               onChangeText={setProduct}
               placeholder={t(language, 'productPlaceholder')}
-              placeholderTextColor={colors.textMuted} />
+              editable={!saving}
+            />
 
-            <Text style={styles.label}>
-              {language === 'hr' ? 'Slobodni SO₂ prije (ppm)' : 'Free SO₂ Before (ppm)'}
-            </Text>
-            <TextInput style={styles.input} value={freeSo2}
+            <TextField
+              label={language === 'hr' ? 'Slobodni SO₂ prije (ppm)' : 'Free SO₂ Before (ppm)'}
+              value={freeSo2}
               onChangeText={setFreeSo2}
               placeholder="e.g. 18"
-              placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" />
+              editable={!saving}
+            />
 
-            <Text style={styles.label}>pH</Text>
-            <TextInput style={styles.input} value={ph}
+            <TextField
+              label="pH"
+              value={ph}
               onChangeText={setPh}
               placeholder="e.g. 3.4"
-              placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" />
+              editable={!saving}
+            />
           </>
         )}
 
-        <Text style={styles.label}>{t(language, 'observations')}</Text>
-        <TextInput style={[styles.input, styles.textArea]}
-          value={notes} onChangeText={setNotes}
+        <TextField
+          label={t(language, 'observations')}
+          value={notes}
+          onChangeText={setNotes}
           placeholder={t(language, 'observationsPlaceholder')}
-          placeholderTextColor={colors.textMuted}
-          multiline numberOfLines={4} />
+          editable={!saving}
+          multiline
+        />
 
-        <TouchableOpacity
-          style={[styles.button, saving && styles.buttonDisabled]}
-          onPress={handleSave} disabled={saving}>
-          {saving
-            ? <ActivityIndicator color={colors.background} />
-            : <Text style={styles.buttonText}>{t(language, 'saveEntry')}</Text>
-          }
-        </TouchableOpacity>
+        <PrimaryButton
+          style={styles.button}
+          onPress={handleSave}
+          disabled={saving}
+          loading={saving}
+          label={t(language, 'saveEntry')}
+        />
 
+        </ScreenWrapper>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -265,7 +282,7 @@ export default function AddEntryScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container:        { flex: 1, backgroundColor: colors.background },
-  content:          { padding: 24, paddingBottom: 60 },
+  content:          { padding: 0, paddingBottom: 0 },
   backBtn:          { marginBottom: 16 },
   backText:         { color: colors.gold, fontSize: 14 },
   title:            { fontSize: 28, color: colors.gold, fontWeight: '700', marginBottom: 24 },
@@ -285,10 +302,7 @@ const styles = StyleSheet.create({
                       paddingHorizontal: 14, paddingVertical: 12,
                       color: colors.textPrimary, fontSize: 15 },
   textArea:         { height: 100, textAlignVertical: 'top' },
-  button:           { backgroundColor: colors.gold, borderRadius: 8,
-                      paddingVertical: 14, alignItems: 'center', marginTop: 32 },
-  buttonDisabled:   { opacity: 0.6 },
-  buttonText:       { color: colors.background, fontWeight: '700', fontSize: 16 },
+  button:           { marginTop: 32 },
 
   // Reminder modal
   modalOverlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',

@@ -10,7 +10,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -19,6 +18,9 @@ import { t } from '../../i18n/translations';
 import { addListing, uploadImage } from '../../firebase/firestore';
 import { reportError } from '../../utils/reportError';
 import { pickImageFromLibrary, takePhotoWithCamera } from './imageHelpers';
+import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
+import { TextField } from '../../components/ui/TextField';
+import { PrimaryButton } from '../../components/ui/PrimaryButton';
 
 export function PostListingModal({
   visible,
@@ -123,122 +125,125 @@ export function PostListingModal({
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           style={styles.modal}
-          contentContainerStyle={styles.modalContent}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t(language, 'postListing')}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={styles.modalClose}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.label}>{t(language, 'title')} *</Text>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t(language, 'titlePlaceholder')}
-            placeholderTextColor={colors.textMuted}
-          />
-
-          <Text style={styles.label}>{t(language, 'category')}</Text>
-          <View style={styles.categoryRow}>
-            {categories.map((c) => (
-              <TouchableOpacity
-                key={c.key}
-                style={[styles.categoryBtn, category === c.key && styles.categoryBtnActive]}
-                onPress={() => setCategory(c.key)}
-              >
-                <Text style={styles.categoryIcon}>{c.icon}</Text>
-                <Text style={[styles.categoryLabel, category === c.key && styles.categoryLabelActive]}>
-                  {c.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.label}>{t(language, 'description')}</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder={t(language, 'descriptionPlaceholder')}
-            placeholderTextColor={colors.textMuted}
-            multiline
-            numberOfLines={3}
-          />
-
-          <Text style={styles.label}>{t(language, 'price')}</Text>
-          <TextInput
-            style={styles.input}
-            value={price}
-            onChangeText={setPrice}
-            placeholder={t(language, 'pricePlaceholder')}
-            placeholderTextColor={colors.textMuted}
-          />
-
-          <Text style={styles.label}>{language === 'hr' ? 'Fotografija' : 'Photo'}</Text>
-          <View style={styles.photoRow}>
-            <TouchableOpacity style={styles.photoBtn} onPress={handlePickImage}>
-              <Text style={styles.photoBtnText}>🖼️ {language === 'hr' ? 'Galerija' : 'Gallery'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto}>
-              <Text style={styles.photoBtnText}>📷 {language === 'hr' ? 'Kamera' : 'Camera'}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {image && (
-            <View style={styles.imagePreview}>
-              <Image source={{ uri: image }} style={styles.previewImage} />
-              <TouchableOpacity style={styles.removeImage} onPress={() => setImage(null)}>
-                <Text style={styles.removeImageText}>✕</Text>
+          <ScreenWrapper style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t(language, 'postListing')}</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
-          )}
 
-          {uploadingImg && (
-            <Text style={styles.uploadingText}>
-              {language === 'hr' ? 'Učitavanje fotografije...' : 'Uploading photo...'}
-            </Text>
-          )}
-
-          <Text style={styles.label}>{t(language, 'contactMethods')}</Text>
-          <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>
-              {t(language, 'showPhone')}{' '}
-              {profile?.phone ? `(${profile.phone})` : `(${t(language, 'notSet')})`}
-            </Text>
-            <Switch
-              value={showPhone}
-              onValueChange={setShowPhone}
-              trackColor={{ true: colors.gold }}
-              thumbColor="#fff"
+            <TextField
+              label={`${t(language, 'title')} *`}
+              value={title}
+              onChangeText={setTitle}
+              placeholder={t(language, 'titlePlaceholder')}
+              editable={!saving}
             />
-          </View>
-          <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>
-              {t(language, 'showEmail')} ({userEmail})
-            </Text>
-            <Switch
-              value={showEmail}
-              onValueChange={setShowEmail}
-              trackColor={{ true: colors.gold }}
-              thumbColor="#fff"
+
+            <Text style={styles.label}>{t(language, 'category')}</Text>
+            <View style={styles.categoryRow}>
+              {categories.map((c) => (
+                <TouchableOpacity
+                  key={c.key}
+                  style={[styles.categoryBtn, category === c.key && styles.categoryBtnActive]}
+                  onPress={() => setCategory(c.key)}
+                >
+                  <Text style={styles.categoryIcon}>{c.icon}</Text>
+                  <Text style={[styles.categoryLabel, category === c.key && styles.categoryLabelActive]}>
+                    {c.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextField
+              label={t(language, 'description')}
+              value={description}
+              onChangeText={setDescription}
+              placeholder={t(language, 'descriptionPlaceholder')}
+              editable={!saving}
+              multiline
             />
-          </View>
 
-          {!profile?.phone && showPhone && (
-            <Text style={styles.phoneWarning}>{t(language, 'phoneWarning')}</Text>
-          )}
+            <TextField
+              label={t(language, 'price')}
+              value={price}
+              onChangeText={setPrice}
+              placeholder={t(language, 'pricePlaceholder')}
+              editable={!saving}
+            />
 
-          <TouchableOpacity style={[styles.button, saving && styles.buttonDisabled]} onPress={handlePost} disabled={saving}>
-            {saving ? <ActivityIndicator color={colors.background} /> : <Text style={styles.buttonText}>{t(language, 'postListing')}</Text>}
-          </TouchableOpacity>
+            <Text style={styles.label}>{language === 'hr' ? 'Fotografija' : 'Photo'}</Text>
+            <View style={styles.photoRow}>
+              <TouchableOpacity style={styles.photoBtn} onPress={handlePickImage} disabled={saving}>
+                <Text style={styles.photoBtnText}>🖼️ {language === 'hr' ? 'Galerija' : 'Gallery'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto} disabled={saving}>
+                <Text style={styles.photoBtnText}>📷 {language === 'hr' ? 'Kamera' : 'Camera'}</Text>
+              </TouchableOpacity>
+            </View>
 
-          <TouchableOpacity style={styles.resetBtn} onPress={resetForm} disabled={saving}>
-            <Text style={styles.resetText}>{t(language, 'reset')}</Text>
-          </TouchableOpacity>
+            {image && (
+              <View style={styles.imagePreview}>
+                <Image source={{ uri: image }} style={styles.previewImage} />
+                <TouchableOpacity style={styles.removeImage} onPress={() => setImage(null)} disabled={saving}>
+                  <Text style={styles.removeImageText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {uploadingImg && (
+              <Text style={styles.uploadingText}>
+                {language === 'hr' ? 'Učitavanje fotografije...' : 'Uploading photo...'}
+              </Text>
+            )}
+
+            <Text style={styles.label}>{t(language, 'contactMethods')}</Text>
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>
+                {t(language, 'showPhone')}{' '}
+                {profile?.phone ? `(${profile.phone})` : `(${t(language, 'notSet')})`}
+              </Text>
+              <Switch
+                value={showPhone}
+                onValueChange={setShowPhone}
+                trackColor={{ true: colors.gold }}
+                thumbColor="#fff"
+                disabled={saving}
+              />
+            </View>
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>
+                {t(language, 'showEmail')} ({userEmail})
+              </Text>
+              <Switch
+                value={showEmail}
+                onValueChange={setShowEmail}
+                trackColor={{ true: colors.gold }}
+                thumbColor="#fff"
+                disabled={saving}
+              />
+            </View>
+
+            {!profile?.phone && showPhone && (
+              <Text style={styles.phoneWarning}>{t(language, 'phoneWarning')}</Text>
+            )}
+
+            <PrimaryButton
+              style={styles.button}
+              onPress={handlePost}
+              disabled={saving}
+              loading={saving}
+              label={t(language, 'postListing')}
+            />
+
+            <TouchableOpacity style={styles.resetBtn} onPress={resetForm} disabled={saving}>
+              <Text style={styles.resetText}>{t(language, 'reset')}</Text>
+            </TouchableOpacity>
+          </ScreenWrapper>
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
@@ -247,7 +252,7 @@ export function PostListingModal({
 
 const styles = StyleSheet.create({
   modal: { flex: 1, backgroundColor: colors.background },
-  modalContent: { padding: 24, paddingBottom: 60 },
+  modalContent: { padding: 0, paddingBottom: 0 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   modalTitle: { fontSize: 22, color: colors.gold, fontWeight: '700' },
   modalClose: { fontSize: 20, color: colors.textMuted, padding: 4 },
@@ -271,9 +276,7 @@ const styles = StyleSheet.create({
   toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: 8 },
   toggleLabel: { fontSize: 13, color: colors.textPrimary, flex: 1 },
   phoneWarning: { fontSize: 12, color: '#c8902a', marginTop: 4 },
-  button: { backgroundColor: colors.gold, borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: colors.background, fontWeight: '700', fontSize: 16 },
+  button: { marginTop: 24 },
   resetBtn: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
   resetText: { color: colors.textMuted, fontSize: 14 },
 });

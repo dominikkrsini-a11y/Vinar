@@ -7,7 +7,9 @@ export function TextField({
   onChangeText,
   placeholder,
   keyboardType,
+  secureTextEntry,
   multiline,
+  editable,
   maxLength,
   style,
 }) {
@@ -21,7 +23,9 @@ export function TextField({
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
         keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
         multiline={multiline}
+        editable={editable}
         maxLength={maxLength}
       />
     </View>

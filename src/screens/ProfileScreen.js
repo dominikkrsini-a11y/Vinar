@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator, Alert, Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -11,6 +11,9 @@ import { logout } from '../firebase/auth';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
+import { ScreenWrapper } from '../components/ui/ScreenWrapper';
+import { TextField } from '../components/ui/TextField';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
 
 const REGIONS = [
   'Slavonija', 'Baranja', 'Podunavlje', 'Pokuplje',
@@ -149,7 +152,8 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container}>
+      <ScreenWrapper style={styles.content}>
       <Text style={styles.title}>{t(language, 'profileTitle')}</Text>
 
       {/* Profile photo */}
@@ -173,25 +177,37 @@ export default function ProfileScreen() {
 
       <Text style={styles.email}>{user.email}</Text>
 
-      <Text style={styles.label}>{t(language, 'firstName')} *</Text>
-      <TextInput style={styles.input} value={firstName} onChangeText={setFirstName}
+      <TextField
+        label={`${t(language, 'firstName')} *`}
+        value={firstName}
+        onChangeText={setFirstName}
         placeholder={t(language, 'firstNamePlaceholder')}
-        placeholderTextColor={colors.textMuted} />
+        editable={!saving}
+      />
 
-      <Text style={styles.label}>{t(language, 'lastName')} *</Text>
-      <TextInput style={styles.input} value={lastName} onChangeText={setLastName}
+      <TextField
+        label={`${t(language, 'lastName')} *`}
+        value={lastName}
+        onChangeText={setLastName}
         placeholder={t(language, 'lastNamePlaceholder')}
-        placeholderTextColor={colors.textMuted} />
+        editable={!saving}
+      />
 
-      <Text style={styles.label}>{t(language, 'wineryName')}</Text>
-      <TextInput style={styles.input} value={wineryName} onChangeText={setWineryName}
+      <TextField
+        label={t(language, 'wineryName')}
+        value={wineryName}
+        onChangeText={setWineryName}
         placeholder={t(language, 'wineryPlaceholder')}
-        placeholderTextColor={colors.textMuted} />
+        editable={!saving}
+      />
 
-      <Text style={styles.label}>{t(language, 'phone')}</Text>
-      <TextInput style={styles.input} value={phone} onChangeText={setPhone}
+      <TextField
+        label={t(language, 'phone')}
+        value={phone}
+        onChangeText={setPhone}
         placeholder={t(language, 'phonePlaceholder')}
-        placeholderTextColor={colors.textMuted} keyboardType="phone-pad" />
+        editable={!saving}
+      />
 
       <Text style={styles.label}>{t(language, 'region')}</Text>
       <TouchableOpacity style={styles.input}
@@ -234,25 +250,25 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={[styles.button, saving && styles.buttonDisabled]}
-        onPress={handleSave} disabled={saving}>
-        {saving
-          ? <ActivityIndicator color={colors.background} />
-          : <Text style={styles.buttonText}>{t(language, 'saveProfile')}</Text>
-        }
-      </TouchableOpacity>
+      <PrimaryButton
+        style={styles.button}
+        onPress={handleSave}
+        disabled={saving}
+        loading={saving}
+        label={t(language, 'saveProfile')}
+      />
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>{t(language, 'logout')}</Text>
       </TouchableOpacity>
+      </ScreenWrapper>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container:      { flex: 1, backgroundColor: colors.background },
-  content:        { padding: 24, paddingBottom: 60 },
+  content:        { padding: 0, paddingBottom: 0 },
   center:         { flex: 1, backgroundColor: colors.background,
                     alignItems: 'center', justifyContent: 'center' },
   title:          { fontSize: 28, color: colors.gold, fontWeight: '700', marginBottom: 4 },
@@ -291,10 +307,7 @@ const styles = StyleSheet.create({
   langFlag:       { fontSize: 20 },
   langLabel:      { fontSize: 14, color: colors.textMuted },
   langLabelActive:{ color: colors.gold },
-  button:         { backgroundColor: colors.gold, borderRadius: 8,
-                    paddingVertical: 14, alignItems: 'center', marginTop: 32 },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText:     { color: colors.background, fontWeight: '700', fontSize: 16 },
+  button:         { marginTop: 32 },
   logoutButton:   { alignItems: 'center', marginTop: 20, paddingVertical: 12 },
   logoutText:     { color: colors.textMuted, fontSize: 14 },
 });

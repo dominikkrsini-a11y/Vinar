@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TouchableOpacity,
   StyleSheet, ActivityIndicator, KeyboardAvoidingView,
   Platform, Alert,
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { loginWithEmail, registerWithEmail } from '../firebase/auth';
+import { TextField } from '../components/ui/TextField';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 
 export default function LoginScreen() {
   const [email,    setEmail]    = useState('');
@@ -49,46 +52,38 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.inner}>
+      <ScreenWrapper style={styles.inner}>
 
         <Text style={styles.logo}>🍷</Text>
         <Text style={styles.title}>Vinar</Text>
         <Text style={styles.subtitle}>Winemaker's Assistant</Text>
 
         <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
+            label="Email"
             value={email}
             onChangeText={setEmail}
             placeholder="your@email.com"
-            placeholderTextColor={colors.textMuted}
             keyboardType="email-address"
-            autoCapitalize="none"
+            editable={!loading}
           />
 
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
+            label="Password"
             value={password}
             onChangeText={setPassword}
             placeholder="password"
-            placeholderTextColor={colors.textMuted}
             secureTextEntry
+            editable={!loading}
           />
 
-          <TouchableOpacity
+          <PrimaryButton
             style={styles.btnGold}
             onPress={handleSubmit}
             disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color="#1a0a08" />
-              : <Text style={styles.btnGoldText}>
-                  {isLogin ? 'Sign In' : 'Create Account'}
-                </Text>
-            }
-          </TouchableOpacity>
+            loading={loading}
+            label={isLogin ? 'Sign In' : 'Create Account'}
+          />
 
           <TouchableOpacity
             style={styles.btnGhost}
@@ -102,7 +97,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-      </View>
+      </ScreenWrapper>
     </KeyboardAvoidingView>
   );
 }
@@ -113,10 +108,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   inner: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    paddingBottom: 24,
   },
   logo:  { fontSize: 64, marginBottom: 8 },
   title: {
@@ -133,34 +127,8 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   form:  { width: '100%' },
-  label: {
-    fontSize: 11,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 6,
-    marginTop: 14,
-  },
-  input: {
-    backgroundColor: colors.surfaceDeep,
-    borderWidth: 1,
-    borderColor: colors.inputBorder,
-    borderRadius: 8,
-    padding: 13,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
   btnGold: {
-    backgroundColor: colors.gold,
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
     marginTop: 24,
-  },
-  btnGoldText: {
-    color: colors.background,
-    fontWeight: '700',
-    fontSize: 16,
   },
   btnGhost: {
     padding: 14,

@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator, Alert,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
@@ -10,6 +10,9 @@ import { updateWine } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
+import { ScreenWrapper } from '../components/ui/ScreenWrapper';
+import { TextField } from '../components/ui/TextField';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
 
 const WINE_TYPES = ['Red', 'White', 'Rosé', 'Orange', 'Sparkling', 'Dessert'];
 
@@ -76,8 +79,8 @@ export default function EditWineScreen({ route, navigation }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <ScreenWrapper style={styles.content}>
 
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>← {wine.name}</Text>
@@ -87,16 +90,21 @@ export default function EditWineScreen({ route, navigation }) {
           {language === 'hr' ? 'Uredi vino' : 'Edit Wine'}
         </Text>
 
-        <Text style={styles.label}>{t(language, 'wineName')} *</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName}
+        <TextField
+          label={`${t(language, 'wineName')} *`}
+          value={name}
+          onChangeText={setName}
           placeholder={t(language, 'wineNamePlaceholder')}
-          placeholderTextColor={colors.textMuted} />
+          editable={!saving}
+        />
 
-        <Text style={styles.label}>{t(language, 'vintageYear')}</Text>
-        <TextInput style={styles.input} value={vintage} onChangeText={setVintage}
+        <TextField
+          label={t(language, 'vintageYear')}
+          value={vintage}
+          onChangeText={setVintage}
           placeholder={t(language, 'vintagePlaceholder')}
-          placeholderTextColor={colors.textMuted}
-          keyboardType="number-pad" maxLength={4} />
+          editable={!saving}
+        />
 
         <Text style={styles.label}>{t(language, 'wineType')} *</Text>
         <TouchableOpacity style={styles.input}
@@ -141,28 +149,32 @@ export default function EditWineScreen({ route, navigation }) {
         <Text style={styles.label}>
           {language === 'hr' ? 'Volumen (L)' : 'Volume (L)'}
         </Text>
-        <TextInput style={styles.input} value={volume} onChangeText={setVolume}
+        <TextField
+          label={language === 'hr' ? 'Volumen (L)' : 'Volume (L)'}
+          value={volume}
+          onChangeText={setVolume}
           placeholder="e.g. 50"
-          placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" />
+          editable={!saving}
+        />
 
-        <Text style={styles.label}>{t(language, 'notes')}</Text>
-        <TextInput style={[styles.input, styles.textArea]}
-          value={notes} onChangeText={setNotes}
+        <TextField
+          label={t(language, 'notes')}
+          value={notes}
+          onChangeText={setNotes}
           placeholder={t(language, 'notesPlaceholder')}
-          placeholderTextColor={colors.textMuted}
-          multiline numberOfLines={4} />
+          editable={!saving}
+          multiline
+        />
 
-        <TouchableOpacity
-          style={[styles.button, saving && styles.buttonDisabled]}
-          onPress={handleSave} disabled={saving}>
-          {saving
-            ? <ActivityIndicator color={colors.background} />
-            : <Text style={styles.buttonText}>
-                {language === 'hr' ? 'Spremi promjene' : 'Save Changes'}
-              </Text>
-          }
-        </TouchableOpacity>
+        <PrimaryButton
+          style={styles.button}
+          onPress={handleSave}
+          disabled={saving}
+          loading={saving}
+          label={language === 'hr' ? 'Spremi promjene' : 'Save Changes'}
+        />
 
+        </ScreenWrapper>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -170,7 +182,7 @@ export default function EditWineScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container:      { flex: 1, backgroundColor: colors.background },
-  content:        { padding: 24, paddingBottom: 60 },
+  content:        { padding: 0, paddingBottom: 0 },
   backBtn:        { marginBottom: 16 },
   backText:       { color: colors.gold, fontSize: 14 },
   title:          { fontSize: 28, color: colors.gold, fontWeight: '700', marginBottom: 24 },
@@ -188,9 +200,6 @@ const styles = StyleSheet.create({
   dropdownItem:   { paddingHorizontal: 14, paddingVertical: 12,
                     borderBottomWidth: 1, borderBottomColor: colors.border },
   dropdownText:   { color: colors.textPrimary, fontSize: 15 },
-  button:         { backgroundColor: colors.gold, borderRadius: 8,
-                    paddingVertical: 14, alignItems: 'center', marginTop: 32 },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText:     { color: colors.background, fontWeight: '700', fontSize: 16 },
+  button:         { marginTop: 32 },
 });
 
