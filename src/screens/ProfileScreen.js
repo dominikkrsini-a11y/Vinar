@@ -40,6 +40,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
   }, []);
 
   const loadProfile = async () => {
@@ -113,7 +114,7 @@ export default function ProfileScreen() {
         updatedAt:  new Date().toISOString(),
       });
       Alert.alert(t(language, 'done'), t(language, 'profileSaved'));
-    } catch (e) {
+    } catch (_e) {
       Alert.alert(t(language, 'error'), t(language, 'profileError'));
     } finally {
       setSaving(false);

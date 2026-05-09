@@ -39,6 +39,7 @@ export default function MarketplaceScreen() {
   useFocusEffect(
     useCallback(() => {
       loadMarketplaceData();
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
     }, [])
   );
 

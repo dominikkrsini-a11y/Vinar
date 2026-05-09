@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import {
-  View, Text, TouchableOpacity,
+  Text, TouchableOpacity,
   StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { colors } from '../theme/colors';

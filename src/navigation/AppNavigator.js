@@ -82,7 +82,7 @@ export default function AppNavigator() {
   const [user,         setUser]         = useState(undefined);
   const [needsLang,    setNeedsLang]    = useState(false);
   const [checkingLang, setCheckingLang] = useState(false);
-  const { language, setLanguage }       = useContext(LanguageContext);
+  const { setLanguage }                 = useContext(LanguageContext);
 
   useEffect(() => {
     const unsub = onAuthChange(async (u) => {
@@ -109,6 +109,7 @@ export default function AppNavigator() {
       }
     });
     return unsub;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
   }, []);
 
   if (user === undefined || checkingLang) {

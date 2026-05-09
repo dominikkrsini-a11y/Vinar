@@ -48,6 +48,7 @@ export default function DashboardScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       loadDashboardData();
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
     }, [])
   );
 

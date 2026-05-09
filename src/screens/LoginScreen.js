@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity,
-  StyleSheet, ActivityIndicator, KeyboardAvoidingView,
+  StyleSheet, KeyboardAvoidingView,
   Platform, Alert,
 } from 'react-native';
 import { colors } from '../theme/colors';

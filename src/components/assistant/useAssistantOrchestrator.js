@@ -50,6 +50,7 @@ export function useAssistantOrchestrator({ language, t }) {
         setLoadingCtx(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
   }, []);
 
   useEffect(() => {

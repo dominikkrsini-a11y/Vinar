@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { reportError } from '../utils/reportError';
+import { reportError } from '../../utils/reportError';
 
 const getDefaultBaseUrl = () => {
   return (

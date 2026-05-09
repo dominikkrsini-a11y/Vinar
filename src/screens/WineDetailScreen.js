@@ -47,6 +47,7 @@ export default function WineDetailScreen({ route, navigation }) {
   useFocusEffect(
     useCallback(() => {
       loadEntries();
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
     }, [])
   );
 
