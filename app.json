@@ -46,8 +46,7 @@
       "firebaseProjectId": "vinar-app",
       "firebaseStorageBucket": "vinar-app.firebasestorage.app",
       "firebaseMessagingSenderId": "436707378093",
-      "firebaseAppId": "1:436707378093:web:f45bb79ff0403bac3cd724",
-      "anthropicApiKey": "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"
+      "firebaseAppId": "1:436707378093:web:f45bb79ff0403bac3cd724"
     },
     "owner": "danilo1"
   }

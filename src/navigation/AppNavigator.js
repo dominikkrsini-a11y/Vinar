@@ -7,6 +7,7 @@ import { colors } from '../theme/colors';
 import { onAuthChange } from '../firebase/auth';
 import { getUserProfile } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
+import { reportError } from '../utils/reportError';
 
 import LoginScreen       from '../screens/LoginScreen';
 import DashboardScreen   from '../screens/DashboardScreen';
@@ -40,11 +41,11 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.background,
           borderTopColor: colors.border,
         },
         tabBarActiveTintColor:   colors.gold,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarInactiveTintColor: colors.iconInactive,
         tabBarLabelStyle: { fontSize: 11, marginBottom: 4 },
       }}
     >
@@ -81,7 +82,7 @@ export default function AppNavigator() {
   const [user,         setUser]         = useState(undefined);
   const [needsLang,    setNeedsLang]    = useState(false);
   const [checkingLang, setCheckingLang] = useState(false);
-  const { language, setLanguage }       = useContext(LanguageContext);
+  const { setLanguage }                 = useContext(LanguageContext);
 
   useEffect(() => {
     const unsub = onAuthChange(async (u) => {
@@ -101,12 +102,14 @@ export default function AppNavigator() {
           setNeedsLang(true);
         }
       } catch (e) {
+        reportError(e, { screen: 'AppNavigator', action: 'getUserProfileLanguage' });
         setNeedsLang(true);
       } finally {
         setCheckingLang(false);
       }
     });
     return unsub;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
   }, []);
 
   if (user === undefined || checkingLang) {
