@@ -146,9 +146,6 @@ export default function EditWineScreen({ route, navigation }) {
           </View>
         )}
 
-        <Text style={styles.label}>
-          {language === 'hr' ? 'Volumen (L)' : 'Volume (L)'}
-        </Text>
         <TextField
           label={language === 'hr' ? 'Volumen (L)' : 'Volume (L)'}
           value={volume}
