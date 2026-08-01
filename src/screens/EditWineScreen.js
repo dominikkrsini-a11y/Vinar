@@ -45,7 +45,7 @@ export default function EditWineScreen({ route, navigation }) {
     'Dessert':   t(language, 'dessert'),
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!name.trim()) {
       Alert.alert(t(language, 'required'), t(language, 'wineNameRequired'));
       return;
@@ -55,25 +55,19 @@ export default function EditWineScreen({ route, navigation }) {
       return;
     }
     setSaving(true);
-    try {
-      await updateWine(auth.currentUser.uid, wine.id, {
-        name: name.trim(), vintage: vintage.trim(),
-        type, grape, notes: notes.trim(), volume: volume.trim(),
-      });
-      Alert.alert(t(language, 'done'), language === 'hr' ? 'Vino ažurirano.' : 'Wine updated.', [
-        { text: t(language, 'ok'), onPress: () => navigation.goBack() }
-      ]);
-    } catch (e) {
+    // Don't await — see AddWineScreen for why: write promises don't
+    // resolve until the backend acknowledges the write, so awaiting would
+    // hang the UI indefinitely while offline.
+    updateWine(auth.currentUser.uid, wine.id, {
+      name: name.trim(), vintage: vintage.trim(),
+      type, grape, notes: notes.trim(), volume: volume.trim(),
+    }).catch((e) => {
       reportError(e, { screen: 'EditWine', action: 'updateWine', wineId: wine?.id });
-      Alert.alert(
-        language === 'hr' ? 'Greška' : 'Error',
-        language === 'hr'
-          ? 'Ne mogu spremiti promjene vina. Pokušajte ponovno.'
-          : 'Could not save wine changes. Please try again.'
-      );
-    } finally {
-      setSaving(false);
-    }
+    });
+    setSaving(false);
+    Alert.alert(t(language, 'done'), language === 'hr' ? 'Vino ažurirano.' : 'Wine updated.', [
+      { text: t(language, 'ok'), onPress: () => navigation.goBack() }
+    ]);
   };
 
   return (

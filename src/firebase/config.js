@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 // eslint-disable-next-line import/named -- Metro/RN build exports this; ESLint static resolution can't see it
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
@@ -22,5 +22,10 @@ const app = initializeApp(firebaseConfig);
 export const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
-export const db      = getFirestore(app);
+// persistentLocalCache backs reads/writes with on-device storage so wines
+// and logbook entries stay readable and editable offline; Firestore syncs
+// queued writes automatically once the device reconnects.
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache(),
+});
 export const storage = getStorage(app);

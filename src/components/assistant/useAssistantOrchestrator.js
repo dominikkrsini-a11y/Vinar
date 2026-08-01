@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { auth } from '../../firebase/config';
-import { getEntries, getUserProfile, getWines } from '../../firebase/firestore';
-import { buildSystemPrompt } from '../../services/assistant/prompt';
+import { getUserProfile } from '../../firebase/firestore';
 import { getAssistantBaseUrl, sendAssistantMessage } from '../../services/assistant/client';
 import { reportError } from '../../utils/reportError';
 import { buildUserContent } from './buildUserContent';
@@ -14,8 +13,6 @@ export function useAssistantOrchestrator({ language, t }) {
   const [loading, setLoading] = useState(false);
   const [loadingCtx, setLoadingCtx] = useState(true);
   const [profile, setProfile] = useState(null);
-  const [wines, setWines] = useState([]);
-  const [entries, setEntries] = useState({});
   const [pendingImage, setPendingImage] = useState(null);
 
   const scrollRef = useRef(null);
@@ -24,20 +21,13 @@ export function useAssistantOrchestrator({ language, t }) {
   useEffect(() => {
     (async () => {
       try {
+        // Only the profile is fetched here — it's used for the local
+        // welcome message (see AssistantMessageList.js). Wines and logbook
+        // entries are no longer fetched client-side: the server builds the
+        // system prompt itself from Firestore, keyed by the verified uid.
         const uid = auth.currentUser.uid;
-        const [profileData, winesData] = await Promise.all([
-          getUserProfile(uid),
-          getWines(uid),
-        ]);
+        const profileData = await getUserProfile(uid);
         setProfile(profileData);
-        setWines(winesData);
-
-        const entriesMap = {};
-        await Promise.all(winesData.map(async (w) => {
-          const e = await getEntries(uid, w.id);
-          entriesMap[w.id] = e.slice(0, 5);
-        }));
-        setEntries(entriesMap);
       } catch (e) {
         reportError(e, { screen: 'Assistant', action: 'loadContext' });
         Alert.alert(
@@ -87,11 +77,10 @@ export function useAssistantOrchestrator({ language, t }) {
         content: msg.content,
       }));
 
+      // system/model/max_tokens are no longer sent — the server owns all
+      // three (see server/routes/assistant.js).
       const data = await sendAssistantMessage({
         baseUrl: assistantBaseUrl,
-        model: 'claude-3-5-haiku-latest',
-        max_tokens: 1024,
-        system: buildSystemPrompt(profile, wines, entries),
         messages: apiMessages,
       });
 
@@ -109,8 +98,8 @@ export function useAssistantOrchestrator({ language, t }) {
       Alert.alert(
         language === 'hr' ? 'Greška' : 'Error',
         language === 'hr'
-          ? 'Ne mogu kontaktirati pomoćnika. Provjerite da server radi.'
-          : 'Could not reach the assistant. Please check the local server is running.'
+          ? 'Trenutno ne mogu kontaktirati pomoćnika. Pokušajte ponovno kasnije.'
+          : 'Could not reach the assistant right now. Please try again later.'
       );
     } finally {
       setLoading(false);
@@ -131,4 +120,3 @@ export function useAssistantOrchestrator({ language, t }) {
     sendMessage,
   };
 }
-

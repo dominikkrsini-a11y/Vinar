@@ -28,3 +28,33 @@ jobs:
 
       - name: Test
         run: npm test
+
+  server:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install deps
+        working-directory: server
+        # npm install (not ci) — server/package-lock.json needs to be
+        # regenerated locally (`cd server && npm install`) and committed;
+        # switch this to `npm ci` once that's done.
+        run: npm install
+
+      - name: Syntax-check all server source files
+        working-directory: server
+        # Deliberately node --check, not `node index.js` — booting the
+        # real server requires ANTHROPIC_API_KEY/Firebase/Upstash secrets
+        # that must not exist in CI. This only validates syntax.
+        run: |
+          find . -name "*.js" -not -path "./node_modules/*" -print0 \
+            | xargs -0 -n1 node --check

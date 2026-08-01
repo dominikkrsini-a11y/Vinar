@@ -8,6 +8,7 @@ import { onAuthChange } from '../firebase/auth';
 import { getUserProfile } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { reportError } from '../utils/reportError';
+import { OfflineBanner } from '../components/ui/OfflineBanner';
 
 import LoginScreen       from '../screens/LoginScreen';
 import DashboardScreen   from '../screens/DashboardScreen';
@@ -132,21 +133,24 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          <>
-            <Stack.Screen name="Main"       component={MainTabs} />
-            <Stack.Screen name="AddWine"    component={AddWineScreen} />
-            <Stack.Screen name="WineDetail" component={WineDetailScreen} />
-            <Stack.Screen name="AddEntry"   component={AddEntryScreen} />
-            <Stack.Screen name="EditWine"   component={EditWineScreen} />
-            <Stack.Screen name="Reference"  component={ReferenceScreen} />
-          </>
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <View style={{ flex: 1 }}>
+      <OfflineBanner />
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {user ? (
+            <>
+              <Stack.Screen name="Main"       component={MainTabs} />
+              <Stack.Screen name="AddWine"    component={AddWineScreen} />
+              <Stack.Screen name="WineDetail" component={WineDetailScreen} />
+              <Stack.Screen name="AddEntry"   component={AddEntryScreen} />
+              <Stack.Screen name="EditWine"   component={EditWineScreen} />
+              <Stack.Screen name="Reference"  component={ReferenceScreen} />
+            </>
+          ) : (
+            <Stack.Screen name="Login" component={LoginScreen} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </View>
   );
 }

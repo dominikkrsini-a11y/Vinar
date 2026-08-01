@@ -76,38 +76,37 @@ export default function AddEntryScreen({ route, navigation }) {
     { key: 'note',         label: t(language, 'note'),         icon: '📝' },
   ];
 
-  const handleSave = async () => {
+  const handleSave = () => {
     setSaving(true);
-    try {
-      const entryData = { type };
-      if (type === 'fermentation') {
-        if (temperature) entryData.temperature = temperature;
-        if (density)     entryData.density     = density;
-        if (sugar)       entryData.sugar       = sugar;
-        if (ph)          entryData.ph          = ph;
-        if (yeast)       entryData.yeast       = yeast;
-      }
-      if (type === 'sulfur') {
-        if (amount)  entryData.amount  = amount;
-        if (product) entryData.product = product;
-        if (freeSo2) entryData.freeSo2 = freeSo2;
-        if (ph)      entryData.ph      = ph;
-      }
-      if (notes) entryData.notes = notes;
+    const entryData = { type };
+    if (type === 'fermentation') {
+      if (temperature) entryData.temperature = temperature;
+      if (density)     entryData.density     = density;
+      if (sugar)       entryData.sugar       = sugar;
+      if (ph)          entryData.ph          = ph;
+      if (yeast)       entryData.yeast       = yeast;
+    }
+    if (type === 'sulfur') {
+      if (amount)  entryData.amount  = amount;
+      if (product) entryData.product = product;
+      if (freeSo2) entryData.freeSo2 = freeSo2;
+      if (ph)      entryData.ph      = ph;
+    }
+    if (notes) entryData.notes = notes;
 
-      await addEntry(auth.currentUser.uid, wine.id, entryData);
-
-      if (type === 'sulfur') {
-        // Show reminder modal before going back
-        setShowReminder(true);
-      } else {
-        navigation.goBack();
-      }
-    } catch (e) {
-      Alert.alert(t(language, 'error'), 'Could not save entry.');
+    // Don't await — write promises don't resolve until the backend
+    // acknowledges the write, so awaiting would hang the UI indefinitely
+    // while offline. The entry is written to the local cache immediately.
+    addEntry(auth.currentUser.uid, wine.id, entryData).catch((e) => {
       reportError(e, { screen: 'AddEntry', action: 'saveEntry', type });
-    } finally {
-      setSaving(false);
+    });
+
+    setSaving(false);
+    if (type === 'sulfur') {
+      // Show reminder modal before going back
+      setShowReminder(true);
+    } else {
+      navigation.goBack();
     }
   };
 

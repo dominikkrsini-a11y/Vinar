@@ -43,7 +43,7 @@ export default function AddWineScreen({ navigation }) {
     'Dessert':  t(language, 'dessert'),
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!name.trim()) {
       Alert.alert(t(language, 'required'), t(language, 'wineNameRequired'));
       return;
@@ -53,25 +53,21 @@ export default function AddWineScreen({ navigation }) {
       return;
     }
     setSaving(true);
-    try {
-      await addWine(auth.currentUser.uid, {
-        name: name.trim(), vintage: vintage.trim(),
-        type, grape, notes: notes.trim(), volume: volume.trim(),
-      });
-      Alert.alert(t(language, 'done'), t(language, 'wineAdded'), [
-        { text: t(language, 'ok'), onPress: () => navigation.goBack() }
-      ]);
-    } catch (e) {
+    // Don't await — Firestore write promises don't resolve until the
+    // backend acknowledges the write, which can take an unbounded amount
+    // of time offline. The wine is written to the local cache immediately
+    // (latency compensation) and synced automatically once back online, so
+    // it's safe to confirm success right away.
+    addWine(auth.currentUser.uid, {
+      name: name.trim(), vintage: vintage.trim(),
+      type, grape, notes: notes.trim(), volume: volume.trim(),
+    }).catch((e) => {
       reportError(e, { screen: 'AddWine', action: 'addWine' });
-      Alert.alert(
-        language === 'hr' ? 'Greška' : 'Error',
-        language === 'hr'
-          ? 'Ne mogu spremiti vino. Provjerite internet vezu i pokušajte ponovno.'
-          : 'Could not save wine. Please check your connection and try again.'
-      );
-    } finally {
-      setSaving(false);
-    }
+    });
+    setSaving(false);
+    Alert.alert(t(language, 'done'), t(language, 'wineAdded'), [
+      { text: t(language, 'ok'), onPress: () => navigation.goBack() }
+    ]);
   };
 
   return (

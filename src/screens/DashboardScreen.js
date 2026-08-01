@@ -1,4 +1,4 @@
-import { useState, useCallback, useContext } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Modal, Alert,
@@ -6,7 +6,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { getUserProfile, getWines, getEntries } from '../firebase/firestore';
+import { getUserProfile, getEntries, subscribeToWines } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
@@ -19,35 +19,41 @@ export default function DashboardScreen({ navigation }) {
   const [entryCount,      setEntryCount]      = useState(0);
   const { language } = useContext(LanguageContext);
 
-  const loadDashboardData = async () => {
-    try {
-      const [profileData, winesData] = await Promise.all([
-        getUserProfile(auth.currentUser.uid),
-        getWines(auth.currentUser.uid),
-      ]);
-      setProfile(profileData);
+  // Live wines list — serves cached data immediately offline and updates
+  // automatically as wines are added/edited/deleted (including once queued
+  // offline writes sync back to the server).
+  useEffect(() => {
+    const uid = auth.currentUser.uid;
+    const unsubscribe = subscribeToWines(uid, async (winesData) => {
       setWines(winesData);
-      // Count all entries across all wines
-      const counts = await Promise.all(
-        winesData.map(w => getEntries(auth.currentUser.uid, w.id))
-      );
-      setEntryCount(counts.reduce((sum, e) => sum + e.length, 0));
-    } catch (e) {
-      reportError(e, { screen: 'Dashboard', action: 'loadDashboardData' });
+      try {
+        const counts = await Promise.all(
+          winesData.map(w => getEntries(uid, w.id))
+        );
+        setEntryCount(counts.reduce((sum, e) => sum + e.length, 0));
+      } catch (e) {
+        reportError(e, { screen: 'Dashboard', action: 'loadEntryCounts' });
+      }
+      setLoading(false);
+    }, (e) => {
+      reportError(e, { screen: 'Dashboard', action: 'subscribeToWines' });
       Alert.alert(
         language === 'hr' ? 'Greška' : 'Error',
         language === 'hr'
           ? 'Ne mogu učitati podatke na naslovnoj.'
           : 'Could not load dashboard data.'
       );
-    } finally {
       setLoading(false);
-    }
-  };
+    });
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — subscribe once for the screen's lifetime
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      loadDashboardData();
+      getUserProfile(auth.currentUser.uid)
+        .then(setProfile)
+        .catch((e) => reportError(e, { screen: 'Dashboard', action: 'loadProfile' }));
       // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
     }, [])
   );
@@ -129,10 +135,6 @@ export default function DashboardScreen({ navigation }) {
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>{entryCount}</Text>
           <Text style={styles.statLabel}>{t(language, 'entries')}</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>{t(language, 'tasks')}</Text>
         </View>
       </View>
 

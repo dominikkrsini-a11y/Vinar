@@ -40,13 +40,7 @@
     "extra": {
       "eas": {
         "projectId": "2d68e9fa-4032-4bc2-9188-5fad1b9f8af3"
-      },
-      "firebaseApiKey": "AIzaSyAbBcsbuOc2GoGyhS-Mqa7bMNzfE5oumpY",
-      "firebaseAuthDomain": "vinar-app.firebaseapp.com",
-      "firebaseProjectId": "vinar-app",
-      "firebaseStorageBucket": "vinar-app.firebasestorage.app",
-      "firebaseMessagingSenderId": "436707378093",
-      "firebaseAppId": "1:436707378093:web:f45bb79ff0403bac3cd724"
+      }
     },
     "owner": "danilo1"
   }

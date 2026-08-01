@@ -2,15 +2,28 @@ import 'dotenv/config';
 
 import cors from 'cors';
 import express from 'express';
+import * as Sentry from '@sentry/node';
+import { config, validateEnv } from './config.js';
+import assistantRouter from './routes/assistant.js';
+import { logError, logInfo } from './logger.js';
+
+validateEnv();
+
+// Optional — only enabled if SENTRY_DSN is set. Not in REQUIRED_ENV_VARS
+// (server/config.js) since the proxy must keep working without it.
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0.1 });
+}
 
 const app = express();
 
-const PORT = Number(process.env.PORT || 3001);
-
 app.use(express.json({ limit: '2mb' }));
 
+// NOTE: CORS is not an authentication boundary. React Native fetch calls
+// carry no Origin header at all, so this check is bypassed by design for
+// the mobile app. The actual identity check is the Firebase ID token
+// verified in middleware/auth.js on every /api/assistant request.
 const allowOrigin = (origin) => {
-  // React Native fetch often omits Origin; allow it for local dev.
   if (!origin) return true;
 
   const o = String(origin).toLowerCase();
@@ -35,122 +48,33 @@ app.use(
       if (allowOrigin(origin)) return cb(null, true);
       return cb(new Error(`CORS blocked origin: ${origin}`));
     },
-    methods: ['POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type'],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
-// ---- Simple in-memory per-IP rate limiting (dev) ----
-const RATE_WINDOW_MS = 5 * 60 * 1000;
-const RATE_MAX = 20;
-const ipHits = new Map(); // ip -> number[] timestamps
-
-function getClientIp(req) {
-  const xff = req.headers['x-forwarded-for'];
-  if (typeof xff === 'string' && xff.trim()) return xff.split(',')[0].trim();
-  return req.socket?.remoteAddress || 'unknown';
-}
-
-function rateLimit(req, res, next) {
-  const ip = getClientIp(req);
-  const now = Date.now();
-  const arr = ipHits.get(ip) || [];
-  const filtered = arr.filter((t) => now - t < RATE_WINDOW_MS);
-  filtered.push(now);
-  ipHits.set(ip, filtered);
-
-  if (filtered.length > RATE_MAX) {
-    return res.status(429).json({
-      error: { message: 'Rate limit exceeded. Please wait and try again.' },
-    });
-  }
-  next();
-}
-
-function isValidMessage(m) {
-  if (!m || typeof m !== 'object') return false;
-  if (m.role !== 'user' && m.role !== 'assistant') return false;
-  if (!Array.isArray(m.content)) return false;
-
-  // Content items are {type:'text',text} or {type:'image',source:{type:'base64',media_type,data}}
-  for (const c of m.content) {
-    if (!c || typeof c !== 'object') return false;
-    if (c.type === 'text') {
-      if (typeof c.text !== 'string') return false;
-      if (c.text.length > 4000) return false;
-    } else if (c.type === 'image') {
-      const s = c.source;
-      if (!s || typeof s !== 'object') return false;
-      if (s.type !== 'base64') return false;
-      if (typeof s.media_type !== 'string') return false;
-      if (typeof s.data !== 'string') return false;
-      // keep payload bounded (approx)
-      if (s.data.length > 1_500_000) return false;
-    } else {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-app.post('/api/assistant', rateLimit, async (req, res) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({
-      error: { message: 'Server missing ANTHROPIC_API_KEY.' },
-    });
-  }
-
-  const { messages, system, model, max_tokens } = req.body || {};
-
-  if (!Array.isArray(messages) || messages.length < 1 || messages.length > 50) {
-    return res.status(400).json({ error: { message: 'Invalid messages.' } });
-  }
-  if (!messages.every(isValidMessage)) {
-    return res.status(400).json({ error: { message: 'Invalid message shape.' } });
-  }
-  if (typeof system !== 'string' || system.length < 1 || system.length > 50_000) {
-    return res.status(400).json({ error: { message: 'Invalid system prompt.' } });
-  }
-
-  const anthropicModel =
-    typeof model === 'string' && model.trim() ? model.trim() : 'claude-3-5-haiku-latest';
-  const tokens =
-    typeof max_tokens === 'number' && Number.isFinite(max_tokens)
-      ? Math.max(1, Math.min(2048, Math.floor(max_tokens)))
-      : 1024;
-
-  try {
-    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: anthropicModel,
-        max_tokens: tokens,
-        system,
-        messages,
-      }),
-    });
-
-    const text = await upstream.text();
-    res.status(upstream.status);
-    res.setHeader('content-type', upstream.headers.get('content-type') || 'application/json');
-    return res.send(text);
-  } catch (err) {
-    return res.status(502).json({
-      error: { message: 'Upstream request failed.' },
-    });
-  }
-});
+app.use('/api/assistant', assistantRouter);
 
 app.get('/healthz', (_req, res) => res.json({ ok: true }));
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Assistant proxy listening on http://localhost:${PORT}`);
+// Catches anything that reaches here as an error (e.g. CORS rejections,
+// unexpected thrown/rejected errors from route handlers) — logs it as
+// structured JSON and returns a generic JSON error instead of leaking
+// stack traces or crashing the process.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  logError('unhandled_request_error', {
+    path: req.path,
+    method: req.method,
+    message: err?.message,
+  });
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(err);
+  }
+  if (res.headersSent) return;
+  res.status(500).json({ error: { message: 'Internal server error.' } });
 });
 
+app.listen(config.port, '0.0.0.0', () => {
+  logInfo('server_started', { port: config.port });
+});

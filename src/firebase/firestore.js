@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './config';
 
@@ -30,6 +30,17 @@ export const getWines = async (userId) => {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 };
 
+// Live wines list — serves cached data immediately when offline and
+// updates automatically once local writes sync or new snapshots arrive.
+// Returns an unsubscribe function.
+export const subscribeToWines = (userId, onData, onError) => {
+  const ref = collection(db, 'users', userId, 'wines');
+  const q = query(ref, orderBy('createdAt', 'desc'));
+  return onSnapshot(q, (snap) => {
+    onData(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }, onError);
+};
+
 // Logbook entries
 export const addEntry = async (userId, wineId, entryData) => {
   const ref = collection(db, 'users', userId, 'wines', wineId, 'entries');
@@ -44,6 +55,15 @@ export const getEntries = async (userId, wineId) => {
   const q = query(ref, orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+};
+
+// Live logbook entries — same offline-first behavior as subscribeToWines.
+export const subscribeToEntries = (userId, wineId, onData, onError) => {
+  const ref = collection(db, 'users', userId, 'wines', wineId, 'entries');
+  const q = query(ref, orderBy('createdAt', 'desc'));
+  return onSnapshot(q, (snap) => {
+    onData(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }, onError);
 };
 
 export const deleteEntry = async (userId, wineId, entryId) => {

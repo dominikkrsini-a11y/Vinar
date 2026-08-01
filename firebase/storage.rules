@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Vinar — Storage security rules
+//
+// Upload paths in use (see src/firebase/firestore.js uploadImage() callers):
+//   profiles/{userId}/photo.jpg        — ProfileScreen.js
+//   listings/{userId}/{timestamp}.jpg  — screens/marketplace/PostListingModal.js
+//
+// Principle: any signed-in user may read images (profile photos and listing
+// photos are shown to other users in the marketplace), but only the owner
+// of a path may write to it.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidImage() {
+      return request.resource.size < 5 * 1024 * 1024
+          && request.resource.contentType.matches('image/.*');
+    }
+
+    match /profiles/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) && isValidImage();
+    }
+
+    match /listings/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) && isValidImage();
+    }
+
+    // Deny everything else by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

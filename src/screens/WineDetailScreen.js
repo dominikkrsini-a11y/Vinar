@@ -1,15 +1,14 @@
-import { useState, useCallback, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { getEntries, deleteWine, deleteEntry } from '../firebase/firestore';
+import { subscribeToEntries, deleteWine, deleteEntry } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
@@ -29,27 +28,24 @@ export default function WineDetailScreen({ route, navigation }) {
   const [loading,    setLoading]    = useState(true);
   const [exporting,  setExporting]  = useState(false);
 
-  const loadEntries = async () => {
-    try {
-      const data = await getEntries(auth.currentUser.uid, wine.id);
+  // Live entries list — serves cached data immediately offline and updates
+  // automatically as entries are added/deleted (including once queued
+  // offline writes sync back to the server).
+  useEffect(() => {
+    const unsubscribe = subscribeToEntries(auth.currentUser.uid, wine.id, (data) => {
       setEntries(data);
-    } catch (e) {
-      reportError(e, { screen: 'WineDetail', action: 'loadEntries' });
+      setLoading(false);
+    }, (e) => {
+      reportError(e, { screen: 'WineDetail', action: 'subscribeToEntries' });
       Alert.alert(
         language === 'hr' ? 'Greška' : 'Error',
         language === 'hr' ? 'Ne mogu učitati unose.' : 'Could not load entries.'
       );
-    } finally {
       setLoading(false);
-    }
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      loadEntries();
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
-    }, [])
-  );
+    });
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — subscribe once for the screen's lifetime
+  }, []);
 
   const formatDate = (iso) => {
     const d = new Date(iso);
@@ -130,17 +126,15 @@ export default function WineDetailScreen({ route, navigation }) {
         {
           text: language === 'hr' ? 'Obriši' : 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteWine(auth.currentUser.uid, wine.id);
-              navigation.goBack();
-            } catch (e) {
+          onPress: () => {
+            // Don't await — the delete is applied to the local cache
+            // immediately (latency compensation) and queued to sync when
+            // back online; awaiting would hang the UI offline until the
+            // write reaches the server.
+            deleteWine(auth.currentUser.uid, wine.id).catch((e) => {
               reportError(e, { screen: 'WineDetail', action: 'deleteWine' });
-              Alert.alert(
-                language === 'hr' ? 'Greška' : 'Error',
-                language === 'hr' ? 'Ne mogu obrisati vino.' : 'Could not delete wine.'
-              );
-            }
+            });
+            navigation.goBack();
           },
         },
       ]
@@ -156,17 +150,13 @@ export default function WineDetailScreen({ route, navigation }) {
         {
           text: language === 'hr' ? 'Obriši' : 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteEntry(auth.currentUser.uid, wine.id, entry.id);
-              setEntries(prev => prev.filter(e => e.id !== entry.id));
-            } catch (e) {
+          onPress: () => {
+            // Don't await — the live entries subscription above already
+            // reflects the deletion via the local cache; awaiting the
+            // promise would hang offline until the write reaches the server.
+            deleteEntry(auth.currentUser.uid, wine.id, entry.id).catch((e) => {
               reportError(e, { screen: 'WineDetail', action: 'deleteEntry' });
-              Alert.alert(
-                language === 'hr' ? 'Greška' : 'Error',
-                language === 'hr' ? 'Ne mogu obrisati unos.' : 'Could not delete entry.'
-              );
-            }
+            });
           },
         },
       ]
