@@ -75,6 +75,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: { message: 'Internal server error.' } });
 });
 
-app.listen(config.port, '0.0.0.0', () => {
+// No host argument on purpose. Node then binds the unspecified address (::)
+// in dual-stack mode, accepting both IPv6 and IPv4. Passing '0.0.0.0'
+// explicitly restricts the socket to IPv4 only, which Railway's healthcheck
+// and internal proxy cannot always reach.
+app.listen(config.port, () => {
   logInfo('server_started', { port: config.port });
 });
