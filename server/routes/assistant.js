@@ -86,6 +86,33 @@ router.post('/', requireAuth, requireWithinRateLimit, async (req, res) => {
       });
     }
   } catch (err) {
+    // #region agent log
+    fetch('http://127.0.0.1:7853/ingest/455c49a4-0543-4545-bab0-3a2545c46eb6', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'fd8b60' },
+      body: JSON.stringify({
+        sessionId: 'fd8b60',
+        runId: 'run1',
+        hypothesisId: 'A,B,C,D',
+        location: 'server/routes/assistant.js:88',
+        message: 'usage check threw',
+        data: {
+          code: err?.code,
+          name: err?.name,
+          message: err?.message,
+          details: err?.details,
+          hasUid: Boolean(req.uid),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    logError('debug_usage_check_error_detail', {
+      code: err?.code,
+      name: err?.name,
+      message: err?.message,
+      details: err?.details,
+    });
+    // #endregion
     logError('usage_check_failed', { uid: req.uid, message: err?.message });
     return res.status(500).json({ error: { message: 'Could not verify usage limits.' } });
   }
