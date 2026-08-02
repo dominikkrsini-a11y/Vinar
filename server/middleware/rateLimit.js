@@ -28,21 +28,6 @@ if (config.upstash.enabled) {
 
 // Must run AFTER requireAuth — relies on req.uid being set.
 export async function requireWithinRateLimit(req, res, next) {
-  // #region agent log
-  fetch('http://127.0.0.1:7853/ingest/455c49a4-0543-4545-bab0-3a2545c46eb6', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'fd8b60' },
-    body: JSON.stringify({
-      sessionId: 'fd8b60',
-      runId: 'run1',
-      hypothesisId: 'E',
-      location: 'server/middleware/rateLimit.js:31',
-      message: 'rate limit middleware reached',
-      data: { upstashEnabled: config.upstash.enabled, willSkip: !config.upstash.enabled },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
   if (!config.upstash.enabled) return next();
 
   const uid = req.uid;

@@ -13,6 +13,25 @@
 export const winemakerKnowledge = `
 
 ═══════════════════════════════════════════════════════
+HOW TO USE THIS KNOWLEDGE
+═══════════════════════════════════════════════════════
+
+- Adapt, do not recite. Everything below is a reference point, not a recipe. The right answer
+  depends on the fruit, the equipment, the vintage and the numbers in the logbook.
+- Assume a small producer with basic equipment unless told otherwise. Do not offer top-estate
+  technique (optical sorting, cross-flow filtration, new barrique programmes, micro-oxygenation)
+  as the default answer for a small or amateur cellar. Raise it only if they ask or clearly have it.
+- If a missing fact would change the recommendation (press type, cooling, pH, free SO₂, turbidity
+  method, vessel size), ask one short question. Otherwise state the assumption in half a sentence
+  and answer anyway.
+- Prefer the method they can carry out today over the theoretically best one.
+- Say the honest limit when it applies: fruit quality, hygiene and process control set the ceiling,
+  and advice cannot lift it on its own.
+- Whole-cluster pressing and stem use are never automatic. Stems help drainage but can add
+  bitterness and raise pH. For Grk especially, already firm and slightly bitter, treat stems as
+  a deliberate choice rather than a habit.
+
+═══════════════════════════════════════════════════════
 CROATIAN WINEMAKING TERMS
 ═══════════════════════════════════════════════════════
 
@@ -37,6 +56,17 @@ harvest = berba · yield = prinos (urod) · vine = trs · vineyard = vinograd ·
 total acidity = ukupna kiselost · volatile acidity = hlapiva kiselina · residual sugar = neprevreli šećer
 density = gustoća · alcohol = alkohol · tannin = tanin · bitterness = gorčina · freshness = svježina
 oxidation = oksidacija · reduction = redukcija · off-aroma = strani miris · fault = mana
+
+CELLAR EQUIPMENT (podrumska oprema):
+press = preša · pneumatic / bladder press = pneumatska preša · basket press = preša na koš (tijesak)
+continuous screw press = pužna (kontinuirana) preša · press pressure = pritisak prešanja
+crusher-destemmer = muljača-runjača · pump = pumpa · peristaltic pump = peristaltička pumpa
+hose = crijevo · gravity transfer = pretok gravitacijom · cooling = hlađenje
+cooling jacket = rashladni plašt · immersion coil = uronjena spirala za hlađenje
+cold room = hladnjača · tank / vessel = posuda (cisterna) · stainless tank = inox posuda
+variable capacity tank = posuda s plivajućim poklopcem · concrete tank = betonska posuda
+inert gas = inertni plin (dušik, argon) · food grade = prehrambena kvaliteta
+hygiene = higijena · cleaning = pranje · sanitizing = dezinfekcija
 
 ACIDS AND ADDITIVES:
 malic acid = jabučna kiselina · tartaric acid = vinska kiselina · lactic acid = mliječna kiselina
@@ -109,9 +139,7 @@ CROATIAN UPLANDS (Bregovita Hrvatska)
 - Key varieties: Škrlet, Sauvignon Blanc, Pinot Noir, Portugizac
 - Training: Guyot — lifts fruiting zone above ground frost, excellent ventilation
 
-TRIBIDRAG CONNECTION
-- Tribidrag is the genetic progenitor of Zinfandel (USA) and Primitivo (Italy)
-- Strong marketing anchor for Croatian wine internationally
+TRIBIDRAG: genetic progenitor of Zinfandel (USA) and Primitivo (Italy).
 
 ═══════════════════════════════════════════════════════
 CROATIAN VARIETY PLAYBOOK
@@ -189,7 +217,10 @@ BEFORE FERMENTATION AND DURING PRESSING (this stage decides the quality):
 - Skin contact is optional. Use it on purpose, not out of habit: 2–6 hours cold at 8–10°C, or none.
   Warmer maceration longer than about 12 hours extracts harsh phenolics that dry the mouth,
   and no fining will remove them afterwards.
-- Press whole clusters without crushing. The stems help the juice drain and keep the pressing gentle.
+- Destem or press whole clusters — decide each vintage, do not default to either. Whole clusters
+  drain faster and let you press at lower pressure, but green or damaged stems add bitterness and
+  raise pH, and Grk is already firm and slightly bitter. If the stems are not fully brown and ripe,
+  destem. If you do press whole clusters, keep the pressure low and cut the fractions early.
 - The free run juice and the light pressing up to 0.6–0.8 bar are the best quality.
   Stop pressing at 1.0–1.2 bar. Everything pressed after that carries harsh phenolics,
   more potassium and higher pH.
@@ -226,6 +257,92 @@ GRAŠEVINA (white — Slavonia)
 - Harvest: 19–21 Brix for dry style, TA 6.5–8 g/L; can be picked late for sweet styles
 - Ferment 14–17°C, stainless steel, bottle early
 - Its strength is clean fruit and acidity — heavy lees or oak work usually costs more than it adds
+
+═══════════════════════════════════════════════════════
+EQUIPMENT REALITY — WHAT THE GEAR DECIDES
+═══════════════════════════════════════════════════════
+
+Match advice to what the winemaker can actually do. Equipment sets the ceiling on quality
+more than technique does.
+
+PRESS (the biggest quality lever for whites):
+- Free run juice is always the cleanest fraction. Light pressing to 0.6–0.8 bar stays clean.
+- Above roughly 1.2 bar the juice carries harsh phenolics, more potassium and higher pH.
+  You gain volume and lose quality — rarely worth it for a wine you care about.
+- Keep fractions separate, taste them, then decide what goes into the good wine.
+  Aim for 55–60% juice off the total weight, not 70% or more.
+- Bladder (pneumatic) press: gentle and controllable — the practical choice for quality whites.
+- Basket press: gentle if filled shallow and pressed slowly, but slow and labour-heavy.
+- Continuous screw press: fast and harsh. Send its fractions to bulk wine, not the top cuvée.
+- Bad pressing shows as bitterness, grip and browning that no fining will fully remove.
+
+PUMPS AND TRANSFERS:
+- Gravity beats every pump. If the cellar layout allows it, move wine by gravity.
+- Peristaltic (hose) pump: gentle, handles must and lees well.
+- Centrifugal pump: fast, but shears the lees and pulls in oxygen.
+- Every transfer costs a little aroma and picks up oxygen. Move the wine fewer times,
+  and fill vessels slowly from the bottom instead of splashing.
+
+COOLING (decides whether white winemaking works at all):
+- Without cooling you cannot settle juice cold, cannot hold 15–17°C, and cannot stop a
+  temperature spike — the classic setup for a stuck fermentation.
+- Options, best to simplest: glycol jacket on the tank, immersion coil in the tank,
+  cold room for the whole vessel, or picking at night and working with cold fruit.
+- With no cooling at all: pick at night, ferment in the smallest vessels you have (they lose
+  heat faster), work in the coolest corner of the cellar, and accept a fuller style.
+
+TANKS AND VESSELS:
+- Cleanability first. A tank you cannot clean properly will eventually spoil a vintage.
+- Variable capacity (floating lid) tanks solve topping up in a small cellar — usually the
+  cheapest real quality upgrade for someone with part-full vessels.
+- Small vessels have more surface per litre: they oxidise and swing in temperature faster.
+  Top up and check them more often than a big tank.
+- Inert gas (nitrogen or argon) on the headspace is worth more than an extra SO₂ addition.
+- Stainless is neutral and cleanable; concrete holds temperature steady; plastic is short term
+  only and must be food grade.
+
+HONEST LIMIT — SAY THIS WHEN IT MATTERS:
+Without a gentle press and some temperature control, top quality is much harder. Careful work,
+clean fruit and good hygiene close part of the gap, not all of it. Do not promise a 96-point wine
+from equipment that cannot deliver it. Say what the realistic ceiling is, and which single
+upgrade would move it most.
+
+═══════════════════════════════════════════════════════
+PROCESS CHEMISTRY — WHAT ACTUALLY DRIVES DECISIONS
+═══════════════════════════════════════════════════════
+
+The numbers live in the tables below. This is the reasoning that decides which number matters.
+
+pH IS THE MASTER VARIABLE:
+- It sets how much free SO₂ you need for real protection (see SO₂ MANAGEMENT — pH TABLE).
+  A white at pH 3.2 is protected by about 20 ppm; at pH 3.6 it takes about 50 ppm for the same
+  effect, and that you can taste. High pH costs money and sensory quality at once.
+- It sets microbial risk: above pH 3.6, Brett and lactic spoilage become likely.
+- It drives colour and ageing in reds, freshness in whites.
+- TA and pH are not the same thing. Potassium-rich soils give decent TA with high pH.
+  Ask for pH, not only total acidity.
+
+FREE SO₂:
+- Measure before every addition. Dosing off a schedule without measuring is guessing.
+- Stage targets are in DOSING BY STAGE. What protects the wine is the molecular target,
+  not a fixed ppm — that is exactly why the dose depends on pH.
+
+YAN (yeast assimilable nitrogen):
+- Low YAN is the most common cause of a slow start, H₂S and stuck fermentation.
+- Below about 150 mg/L expect trouble; feed in two doses (see YEAST NUTRITION).
+- Sandy, low-vigour vineyards are usually low in YAN — Grk at Lumbarda is the classic case.
+
+MALIC ACID AND THE MLF DECISION:
+- High malic with low pH (Teran, cool vintages) → run MLF; it softens and stabilises.
+- Whites you want crisp (Malvazija, Pošip, Graševina) → block MLF and keep the acidity.
+- The choice is style plus the pH you can afford (see MALOLACTIC FERMENTATION).
+
+VA, OXIDATION, REDUCTION — the faults that come from process, not fruit:
+- VA (vinegar) = acetic bacteria + oxygen + low SO₂. Ullage and stuck wines are the entry points.
+- Oxidation (browning, bruised apple) = too much oxygen, too little SO₂. Cannot be reversed.
+- Reduction (rotten egg) = low YAN or thick lees. Easy early, hard once it turns to mercaptans.
+→ Details in TROUBLESHOOTING. All three are prevented by the same routine: vessels full,
+  SO₂ measured, lees managed, transfers gentle.
 
 ═══════════════════════════════════════════════════════
 HARVEST TIMING
@@ -268,10 +385,10 @@ HARVEST READINESS INDICATORS:
 - Taste: sugar/acid balance, tannin texture
 
 HAND vs. MECHANICAL HARVEST:
-- Hand: Cluster-by-cluster selection, high integrity, required on steep slopes (45°)
-  → ~€96/ton, slow, premium/delicate varieties
-- Mechanical: Fast (24/7), ~€64/ton, flat/moderate slopes only
-  → Modern sorters minimize quality gap for volume production
+- Hand: cluster-by-cluster selection, whole intact fruit, the only option on steep slopes.
+  Slower and dearer — worth it for premium and delicate varieties
+- Mechanical: fast and cheaper, flat to moderate slopes only, brings more juice and MOG to the
+  cellar → sulfite at the crusher and settle harder
 
 ═══════════════════════════════════════════════════════
 FERMENTATION — RED WINES
@@ -299,11 +416,9 @@ CARBONIC MACERATION:
 - Result: Vibrant cherry/raspberry/strawberry, low tannin, soft mouthfeel
 - Used in: Beaujolais style
 
-MACERATION ENZYMES:
-- Lallzyme EX: Degrades pectins/cell walls → faster phenolic extraction, better press yields
-
-ENOLOGICAL TANNINS:
-- Tannin FT Rouge: Add during fermentation → binds anthocyanins → color stabilization first 3–4 days
+ADDITIONS DURING FERMENTATION:
+- Maceration enzymes break down pectins and cell walls → faster extraction, better press yield
+- Oenological tannin added early binds anthocyanins → stabilises colour in the first 3–4 days
 
 → Variety-specific red guidance: see CROATIAN VARIETY PLAYBOOK above
 
@@ -538,129 +653,49 @@ COLD STABILIZATION:
 - Alternative: CMC (Vinostab) — carboxymethylcellulose, inhibits crystal formation
 
 ═══════════════════════════════════════════════════════
-FILTRATION
+FILTRATION AND DEGASSING
 ═══════════════════════════════════════════════════════
 
-NOMINAL (Depth filters — pads/sheets):
-- Rough: 5–10 microns → removes gross turbidity
-- Polish: 1–3 microns → clarity
-
-ABSOLUTE (Membrane filters — cartridges):
-- 0.45 micron: Industry standard "sterile" filtration
-- Removes all yeast and bacteria
-- NON-NEGOTIABLE for wines with residual sugar or incomplete MLF
-
-CROSSFLOW FILTRATION:
-- Wine passes across semipermeable membrane
-- Minimizes clogging, continuous flow
-- Best for larger volumes, modern wineries
-
-═══════════════════════════════════════════════════════
-DEGASSING
-═══════════════════════════════════════════════════════
-
-WHY: Residual CO₂ makes still wine "spritzy" or "thin"
-WHEN: Best above 21°C (gas less soluble at warmer temperatures)
-
-METHODS:
-1. Mechanical agitation: Degassing rod/whip on drill — simple but risks oxygen exposure
-2. Vacuum degassing: Vacuum pump pulls CO₂ out — gentle, no oxygen introduction ✓
-3. Sparging with inert gas: Nitrogen or argon bubbled through wine → carries CO₂ away ✓
-
-→ For quality wine: vacuum or inert gas sparging preferred
+- Depth filters (pads/sheets): 5–10 µm rough for gross turbidity, 1–3 µm for polish
+- Membrane 0.45 µm is "sterile" — removes yeast and bacteria. Non-negotiable for any wine with
+  residual sugar or incomplete MLF
+- Crossflow clogs less and runs continuously, but only pays off on larger volumes
+- Every filtration strips a little aroma and texture. Filter as little as the wine allows
+- Degassing: residual CO₂ makes a still wine spritzy and thin. Works best above 21°C.
+  Vacuum or inert gas sparging is gentle; a degassing rod on a drill is simple but pulls in oxygen
 
 ═══════════════════════════════════════════════════════
 BOTTLING — OXYGEN MANAGEMENT
 ═══════════════════════════════════════════════════════
 
-TPO (Total Package Oxygen) = Dissolved O₂ in wine + Headspace O₂
-- Professional target: TPO < 2 ppm
-- Headspace oxygen = largest source of bottle-to-bottle variation
-
-BEST PRACTICES:
-1. Flush all hoses, pumps, filler bowls with N₂ or CO₂ before wine contact
-2. Sparge empty bottles with inert gas → reduces DO pickup up to 0.5 ppm
-3. Vacuum + inert gas injection before corking → headspace O₂ as low as 0.2 ppm
-4. Check each filling valve for consistency
-
-BOTTLE SHOCK:
-- Muted aromas, disjointed flavors immediately after bottling
-- Caused by physical agitation + minor O₂ exposure during bottling
-- Recovery: 1–4 weeks rest in stable environment
+TPO (total package oxygen) = dissolved O₂ + headspace O₂. Target below 2 ppm.
+Headspace is the biggest source of bottle-to-bottle variation.
+- Flush hoses, pump and filler bowl with inert gas before the wine touches them
+- Sparge the empty bottles, and use vacuum plus inert gas before corking
+- Check each filling valve — one bad valve ruins part of the batch
+- Bottle shock (muted, disjointed aromas) is normal for 1–4 weeks afterwards
 
 ═══════════════════════════════════════════════════════
-CLOSURES
+CLOSURES AND STORAGE
 ═══════════════════════════════════════════════════════
 
-Natural cork:
-- Best for long-term aging (10+ years)
-- Elastic seal + controlled micro-oxygenation → tannin softening, complexity development
-- Risk: TCA cork taint (musty, wet cardboard aroma)
-- Standard for Vrhunsko Vino, premium Plavac Mali
-
-Screw cap (Stelvin):
-- Near-perfect airtight seal → no oxidation, no TCA
-- Ideal for fresh whites and rosés (Graševina, standard Malvazija)
-- Ensures bottle-to-bottle consistency
-- Gaining wide acceptance in Croatian market
-
-Synthetic cork:
-- TCA-free, consistent
-- Suitable for wines consumed within 3–5 years
-
-Glass stopper (Vinolok):
-- Premium aesthetic, reusable, airtight
-- Popular for boutique high-end whites in Croatia (Malvazija, Pošip)
+- Natural cork: best for 10+ year ageing (slow micro-oxygenation softens tannin); risk is TCA taint
+- Screw cap: airtight, no TCA, consistent — ideal for fresh whites and rosés
+- Synthetic cork: TCA-free, for wines drunk within 3–5 years
+- Glass stopper: airtight and premium-looking, popular for boutique Croatian whites
+- Storage: constant 13°C, 60–70% humidity, dark, bottles horizontal, no vibration.
+  Above 21°C the wine ages fast and turns "stewed"
 
 ═══════════════════════════════════════════════════════
-WINE STORAGE
+CROATIAN CLASSIFICATION AND LABELLING
 ═══════════════════════════════════════════════════════
 
-Temperature:   13°C (55°F) — constant; above 21°C accelerates aging → "stewed" fruit
-Humidity:      60–70% — prevents corks drying/shrinking (oxygen ingress)
-Light:         Total darkness — prevents "light-struck" off-aromas
-Orientation:   Horizontal — keeps cork moist and sealed
-Vibration:     Avoid — disturbs sediment, disrupts aging chemistry
-
-═══════════════════════════════════════════════════════
-PROŠEK — TRADITIONAL DALMATIAN SWEET WINE
-═══════════════════════════════════════════════════════
-
-Production:
-1. Grapes dried on vine (overripe) or on straw mats → concentrates sugar/acid
-2. Manual crushing of dried berries → thick concentrated juice
-3. Skin maceration several days → color/tannin
-4. Fermentation: Extreme sugar levels → specialized yeast, can last 1+ year
-5. Aging: Minimum 1 year in oak barrels
-
-Profile: 15–18% vol., syrupy, contemplative, complex
-Occasions: Celebration, dessert, traditional hospitality
-
-═══════════════════════════════════════════════════════
-CROATIAN WINE CLASSIFICATION
-═══════════════════════════════════════════════════════
-
-VRHUNSKO VINO (Premium Quality Wine):
-- Highest designation
-- 100% regional/varietal adherence
-- Minimum natural alcohol: 11% vol. (coastal Zone CII)
-- Maximum yield: 10,000 kg/ha
-- Organoleptic assessment required in Zagreb
-
-KVALITETNO VINO (Quality Wine):
-- Mid-tier, controlled geographical origin
-
-STOLNO VINO (Table Wine):
-- Basic category
-- May omit vintage/variety on label
-
-EU LABELING (Regulation 2021/2117, December 2023):
-- Mandatory: Alcohol strength, allergens ("Contains Sulphites"), energy value (kcal/kJ per 100ml)
-- QR code allowed for: Ingredient list, nutritional table
-- Required on physical label: Net volume, lot number (preceded by 'L'), producer name/address
-
-CROATIAN QUALITY MARKS:
-- IQ (Istrian Quality / Vinistra Association): Malvazija or Teran passing stringent quality controls beyond national requirements
+- Vrhunsko vino: top tier, 100% regional/varietal, max yield 10,000 kg/ha, official tasting panel
+- Kvalitetno vino: mid tier, controlled geographical origin
+- Stolno vino: basic; may omit vintage and variety
+- EU label must carry alcohol, allergens ("sadrži sulfite"), energy value, net volume,
+  lot number (prefixed L) and producer address. Ingredients and nutrition may sit behind a QR code
+- Prošek: traditional Dalmatian sweet wine from dried grapes, 15–18% vol., aged 1+ year in oak
 
 ═══════════════════════════════════════════════════════
 CLIMATE CHANGE ADAPTATION IN CROATIA

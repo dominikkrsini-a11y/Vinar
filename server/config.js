@@ -17,7 +17,28 @@ export function validateEnv() {
     );
     process.exit(1);
   }
+
+  // A real private key paired with an unfilled identity is accepted by
+  // firebase-admin and only fails later at Google as "16 UNAUTHENTICATED",
+  // which gives no hint that the value was never filled in.
+  const placeholders = REQUIRED_ENV_VARS.filter(
+    (key) => key !== 'FIREBASE_PRIVATE_KEY' && /xxxxx|your[-_]/i.test(process.env[key])
+  );
+  if (placeholders.length > 0) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `Placeholder value(s) still set for: ${placeholders.join(', ')}. ` +
+      'Refusing to start — copy the real values from the service account JSON.'
+    );
+    process.exit(1);
+  }
 }
+
+// Runs at module evaluation. middleware/auth.js calls admin.initializeApp() at
+// import time, and ES module imports are hoisted, so calling this from
+// index.js's body would run too late — the SDK throws its own opaque
+// FirebaseAppError first and hides which variable is actually wrong.
+validateEnv();
 
 export const config = {
   port: Number(process.env.PORT || 3001),

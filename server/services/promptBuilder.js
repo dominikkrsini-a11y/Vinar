@@ -1,5 +1,12 @@
 import { adminDb } from '../middleware/auth.js';
 import { winemakerKnowledge } from '../data/winemakerKnowledge.js';
+import {
+  computeFermentationStatus,
+  computeSo2Advice,
+  densityAsGL,
+  isWhiteLike,
+  toNumber,
+} from './wineMath.js';
 
 // Ported from src/services/assistant/prompt.js. The server now owns this
 // entirely — the client never sends profile/wine/entry data or a system
@@ -33,19 +40,6 @@ async function fetchUserContext(uid) {
   return { profile, wines, entriesByWineId };
 }
 
-function toNumber(value) {
-  if (value === null || value === undefined || value === '') return null;
-  const n = Number(String(value).replace(',', '.'));
-  return Number.isFinite(n) ? n : null;
-}
-
-// App stores density as g/L (e.g. 1080). Accept SG (e.g. 1.080) too.
-function densityAsGL(value) {
-  const n = toNumber(value);
-  if (n === null) return null;
-  return n < 2 ? n * 1000 : n;
-}
-
 function entryDate(entry) {
   const raw = entry?.createdAt;
   if (!raw || typeof raw !== 'string') return null;
@@ -57,11 +51,6 @@ function daysSince(isoDate) {
   const t = Date.parse(isoDate);
   if (!Number.isFinite(t)) return null;
   return Math.floor((Date.now() - t) / (24 * 60 * 60 * 1000));
-}
-
-function isWhiteLike(type) {
-  const t = String(type || '').toLowerCase();
-  return t.includes('white') || t.includes('rosé') || t.includes('rose') || t.includes('orange') || t.includes('sparkling');
 }
 
 function formatEntry(e) {
@@ -114,6 +103,86 @@ function formatWineBlock(wine, entries) {
   const entryText = wineEntries.map(formatEntry).join('\n');
   const trend = densityTrendLine(wineEntries);
   return `${header}\nRecent logbook entries:\n${entryText}${trend ? `\n${trend}` : ''}`;
+}
+
+// Volume is the only equipment-adjacent signal in the data model, so scale is
+// derived from it rather than asked for. Falls back to "small" instead of
+// staying silent — the model must never default to top-estate technique.
+function computeScaleHint(wines) {
+  const volumes = (wines || []).map((w) => toNumber(w.volume)).filter((v) => v !== null && v > 0);
+
+  if (volumes.length === 0) {
+    return 'SCALE: unknown — assume a small producer with basic equipment (a gentle press and temperature control may not be available).';
+  }
+
+  const total = Math.round(volumes.reduce((sum, v) => sum + v, 0));
+  const count = volumes.length;
+
+  let band;
+  if (total < 1000) band = 'hobby / very small';
+  else if (total < 10000) band = 'small commercial';
+  else if (total < 50000) band = 'mid-sized';
+  else band = 'larger producer';
+
+  return `SCALE: ~${total} L across ${count} wine${count === 1 ? '' : 's'} — ${band}. Assume basic equipment unless the user says otherwise.`;
+}
+
+function latestValue(entries, read) {
+  for (const e of entries) {
+    const value = read(e);
+    if (value !== null && value !== undefined) return value;
+  }
+  return null;
+}
+
+// Runs the same two calculators the model can call as tools, but over the
+// logbook, so the numbers are already in the prompt. This is what stops the
+// assistant answering "measure your pH and calculate the dose" when the pH is
+// sitting right there in the data.
+function computeDerivedFacts(wines, entriesByWineId) {
+  const lines = [];
+
+  for (const wine of wines || []) {
+    const entries = entriesByWineId?.[wine.id] || [];
+    if (entries.length === 0) continue;
+
+    const label = wine.name || 'Wine';
+    const ferm = entries.filter((e) => e.type === 'fermentation');
+
+    if (ferm.length > 0) {
+      // Entries arrive newest-first from Firestore; wineMath expects oldest-first.
+      const status = computeFermentationStatus({
+        wineType: wine.type,
+        readings: [...ferm].reverse().map((e) => ({
+          date: e.createdAt,
+          density: e.density,
+          temperature: e.temperature,
+          sugar: e.sugar,
+        })),
+      });
+      if (status.ok) {
+        lines.push(`- ${label} — fermentation ${status.status.toUpperCase()}: ${status.summary}`);
+      }
+    }
+
+    const ph = latestValue(entries, (e) => toNumber(e.ph));
+    if (ph !== null) {
+      const latestDensity = ferm.length > 0 ? densityAsGL(ferm[0].density) : null;
+      const so2 = computeSo2Advice({
+        ph,
+        wineType: isWhiteLike(wine.type) ? 'white' : 'red',
+        stage: latestDensity !== null && latestDensity > 1005 ? 'fermenting' : 'aging',
+        currentFreeSo2: latestValue(
+          entries.filter((e) => e.type === 'sulfur'),
+          (e) => toNumber(e.freeSo2)
+        ),
+        volumeL: toNumber(wine.volume),
+      });
+      if (so2.ok) lines.push(`- ${label} — SO₂: ${so2.summary}`);
+    }
+  }
+
+  return lines;
 }
 
 function computeRiskFlags(wines, entriesByWineId) {
@@ -206,10 +275,17 @@ function buildSystemPromptText(profile, wines, entriesByWineId) {
     .map((w) => formatWineBlock(w, entriesByWineId?.[w.id]))
     .join('\n\n');
 
+  const scaleHint = computeScaleHint(wines);
   const risks = computeRiskFlags(wines, entriesByWineId);
   const risksBlock =
     risks.length > 0
       ? `CURRENT RISKS (mention briefly even if user did not ask):\n${risks.join('\n')}\n\n`
+      : '';
+
+  const derived = computeDerivedFacts(wines, entriesByWineId);
+  const derivedBlock =
+    derived.length > 0
+      ? `ALREADY CALCULATED FROM THE LOGBOOK (use these figures, do not recalculate):\n${derived.join('\n')}\n\n`
       : '';
 
   return `You are Vinar, a practical AI assistant for small winemakers.
@@ -225,9 +301,34 @@ Rules you must always follow:
   - Always start from the user's actual logbook numbers (density, temperature, pH, free SO₂, sugar, yeast) before any general knowledge.
   - Name the wine and quote the relevant values in the answer. Do not give generic advice when numbers exist.
   - If CURRENT RISKS lists a problem for that wine, mention it in one short sentence even if the user did not ask — then continue answering their question.
-  - Prefer the wine the user named. If it is unclear which wine they mean and they have more than one, ask which wine in one short question.
-  - If a needed number is missing (e.g. free SO₂ when advising sulfiting), ask one short clarifying question instead of guessing.
+  - Prefer the wine the user named. If it is unclear which wine they mean and they have more than one, ask which wine.
   - Stay short: 2–5 sentences. A risk mention must not make the answer chatty.
+- CALCULATIONS:
+  - Anything under ALREADY CALCULATED is done — quote those figures, never redo the arithmetic.
+  - You have two tools, so2_advice and fermentation_status. Use them only for numbers the user
+    types in the conversation that are not in their logbook (e.g. "pH is 3.5, how much for 300 L").
+  - Never invent an SO₂ dose or a fermentation verdict by hand when a tool or a calculated figure covers it.
+- THINK ABOUT THE WHOLE PROCESS, NOT JUST THE QUESTION:
+  - Work through fruit, equipment, chemistry, timing and the logbook numbers before answering.
+    A cellar problem usually starts an earlier step than the one being asked about — if the real
+    cause is upstream (hard pressing, no cooling, low YAN, ullage), say so in one short sentence.
+  - Give the reason in a few words, never a lecture: what to do now, and the number or symptom it fixes.
+- SCALE AND EQUIPMENT:
+  - Use the SCALE line above. If scale is unknown, assume a small producer with basic equipment.
+  - Never offer top-estate technique (optical sorting, cross-flow filtration, new barrique
+    programmes, micro-oxygenation) as the default for a small setup. Prefer what they can actually
+    do with what they have.
+  - If they mention their press, cooling, tanks or pump, adapt the answer to it explicitly.
+- ASK ONE QUESTION, THEN ANSWER:
+  - Ask only when the missing fact would genuinely change your recommendation — press type,
+    cooling, pH, free SO₂, turbidity method, vessel size, or which wine they mean.
+  - One question maximum, never a list. Otherwise state your assumption in half a sentence and
+    answer anyway. Never interrogate the user instead of helping them.
+- BE HONEST ABOUT LIMITS:
+  - Fruit quality, hygiene and process control set the ceiling. Advice cannot replace them.
+  - If what they want is not reachable with their fruit or equipment, say so in one sentence, give
+    the best result that is reachable, and name the single upgrade that would help most.
+  - Never promise a specific score or medal.
 - Only give longer explanations if the user explicitly asks for more detail.
 - LANGUAGE — STRICT, NO EXCEPTIONS:
   - Answer 100% in the language the user wrote in. Croatian in → Croatian out. English in → English out.
@@ -245,6 +346,8 @@ Rules you must always follow:
     "odležavanje na talogu" not "sur lie", "zastoj vrenja" not "stuck fermentation".
   - Use the simple everyday words small producers use — see CROATIAN WINEMAKING TERMS below.
     Plain and clear always beats technical and impressive.
+  - Equipment words too: "pneumatska preša", "rashladni plašt", "inox posuda", "pretok gravitacijom".
+    See CELLAR EQUIPMENT in the terms list — never leave the English name in a Croatian sentence.
   - Only these may stay in their original form: Brix, pH, YAN, NTU, barrique, Brettanomyces, TCA.
     Explain them briefly in Croatian the first time: "YAN (dostupni dušik za kvasac)".
   - Reread every Croatian answer before sending. Fix anything that looks machine-translated, any
@@ -256,7 +359,9 @@ WINEMAKER: ${profile?.firstName || 'a winemaker'} ${profile?.lastName || ''} —
     profile?.wineryName || 'their winery'
   }, ${profile?.region || 'Croatia'}
 
-${risksBlock}WINEMAKER'S CURRENT WINES AND LOGBOOK — USE THESE NUMBERS FIRST:
+${scaleHint}
+
+${derivedBlock}${risksBlock}WINEMAKER'S CURRENT WINES AND LOGBOOK — USE THESE NUMBERS FIRST:
 ${wineList || 'No wines added yet.'}
 
 REFERENCE KNOWLEDGE:

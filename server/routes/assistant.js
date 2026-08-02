@@ -2,11 +2,17 @@ import { Router } from 'express';
 import { requireAuth, adminDb } from '../middleware/auth.js';
 import { requireWithinRateLimit } from '../middleware/rateLimit.js';
 import { callAnthropic } from '../services/anthropic.js';
+import { assistantTools, runTool } from '../services/assistantTools.js';
 import { buildSystemPromptForUser } from '../services/promptBuilder.js';
 import { config } from '../config.js';
 import { logError } from '../logger.js';
 
 const router = Router();
+
+// Upper bound on upstream calls for a single user message. Three allows one
+// tool result to inform a second tool call before answering, which is as far as
+// this needs to go — there is no planner and no autonomous looping here.
+const MAX_UPSTREAM_CALLS = 3;
 
 // Fields the client is never allowed to control. Rejected outright rather
 // than silently ignored, so a client bug or a malicious client gets a clear
@@ -36,6 +42,28 @@ function isValidMessage(m) {
   }
 
   return true;
+}
+
+// The app reads the reply as `data.content[0].text` (see
+// useAssistantOrchestrator.js), so a tool_use block sitting in content[0] would
+// render as undefined. Collapse whatever came back into exactly one text block.
+function normaliseForClient(data) {
+  const blocks = Array.isArray(data?.content) ? data.content : [];
+  const textBlock = blocks.find(
+    (c) => c?.type === 'text' && typeof c.text === 'string' && c.text.trim()
+  );
+
+  return {
+    ...data,
+    content: [
+      {
+        type: 'text',
+        text: textBlock
+          ? textBlock.text
+          : 'Sorry — I could not put together an answer for that. Please try asking again.',
+      },
+    ],
+  };
 }
 
 // Simple per-user, per-day counter in Firestore. This is a cost backstop on
@@ -86,33 +114,6 @@ router.post('/', requireAuth, requireWithinRateLimit, async (req, res) => {
       });
     }
   } catch (err) {
-    // #region agent log
-    fetch('http://127.0.0.1:7853/ingest/455c49a4-0543-4545-bab0-3a2545c46eb6', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'fd8b60' },
-      body: JSON.stringify({
-        sessionId: 'fd8b60',
-        runId: 'run1',
-        hypothesisId: 'A,B,C,D',
-        location: 'server/routes/assistant.js:88',
-        message: 'usage check threw',
-        data: {
-          code: err?.code,
-          name: err?.name,
-          message: err?.message,
-          details: err?.details,
-          hasUid: Boolean(req.uid),
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    logError('debug_usage_check_error_detail', {
-      code: err?.code,
-      name: err?.name,
-      message: err?.message,
-      details: err?.details,
-    });
-    // #endregion
     logError('usage_check_failed', { uid: req.uid, message: err?.message });
     return res.status(500).json({ error: { message: 'Could not verify usage limits.' } });
   }
@@ -125,14 +126,51 @@ router.post('/', requireAuth, requireWithinRateLimit, async (req, res) => {
     return res.status(500).json({ error: { message: 'Could not load your winemaking context.' } });
   }
 
-  const result = await callAnthropic({ system, messages });
+  // Tool loop. The model may ask for a calculation; we run it locally and hand
+  // the result back. Bounded by MAX_UPSTREAM_CALLS and always resolved here, so
+  // the app only ever receives a finished text answer.
+  const convo = messages.map((m) => ({ role: m.role, content: m.content }));
 
-  if (result.networkError || result.data === null) {
-    logError('anthropic_upstream_failed', { uid: req.uid, status: result.status });
-    return res.status(502).json({ error: { message: 'Upstream request failed.' } });
+  for (let call = 1; call <= MAX_UPSTREAM_CALLS; call += 1) {
+    const result = await callAnthropic({ system, messages: convo, tools: assistantTools });
+
+    if (result.networkError || result.data === null) {
+      logError('anthropic_upstream_failed', { uid: req.uid, status: result.status });
+      return res.status(502).json({ error: { message: 'Upstream request failed.' } });
+    }
+
+    const data = result.data;
+
+    // Any non-200 is an upstream error object, not a message — pass it through
+    // untouched rather than trying to read content blocks off it.
+    if (result.status !== 200) {
+      logError('anthropic_returned_error', { uid: req.uid, status: result.status });
+      return res.status(result.status).json(data);
+    }
+
+    const toolUses = Array.isArray(data.content)
+      ? data.content.filter((c) => c?.type === 'tool_use')
+      : [];
+
+    if (data.stop_reason !== 'tool_use' || toolUses.length === 0) {
+      return res.status(200).json(normaliseForClient(data));
+    }
+
+    if (call === MAX_UPSTREAM_CALLS) {
+      logError('tool_loop_exhausted', { uid: req.uid, tools: toolUses.map((t) => t.name) });
+      return res.status(200).json(normaliseForClient(data));
+    }
+
+    convo.push({ role: 'assistant', content: data.content });
+    convo.push({
+      role: 'user',
+      content: toolUses.map((toolUse) => ({
+        type: 'tool_result',
+        tool_use_id: toolUse.id,
+        content: runTool(toolUse.name, toolUse.input),
+      })),
+    });
   }
-
-  return res.status(result.status).json(result.data);
 });
 
 export default router;
