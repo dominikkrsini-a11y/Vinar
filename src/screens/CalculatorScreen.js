@@ -7,6 +7,7 @@ import { colors } from '../theme/colors';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { calculateABV, calculateSO2Addition, correctSG, getTargetFreeSO2 } from '../features/calculator/helpers';
+import { toNumber } from '../utils/numbers';
 import { TabSwitcher } from '../features/calculator/components/TabSwitcher';
 import { CalcCard } from '../features/calculator/components/CalcCard';
 import { AbvCalculatorTab } from '../features/calculator/components/AbvCalculatorTab';
@@ -45,28 +46,30 @@ export default function CalculatorScreen({ navigation }) {
   ];
 
   const PRODUCTS = [
-    { key: 'kmbs',    label: 'K₂S₂O₅ powder',  defaultPct: 57,   unit: 'pct'    },
-    { key: 'blend',   label: 'Blend powder',    defaultPct: 55.1, unit: 'pct'    },
-    { key: 'campden', label: 'Campden tablets', defaultMg:  440,  unit: 'tablet' },
-    { key: 'liquid',  label: 'Liquid SO₂',      defaultPct: 100,  unit: 'pct'    },
+    { key: 'kmbs',    label: 'K₂S₂O₅',                     defaultPct: 57,   unit: 'pct'    },
+    { key: 'blend',   label: t(language, 'productBlend'),   defaultPct: 55.1, unit: 'pct'    },
+    { key: 'campden', label: t(language, 'productCampden'), defaultMg:  440,  unit: 'tablet' },
+    { key: 'liquid',  label: t(language, 'productLiquid'),  defaultPct: 100,  unit: 'pct'    },
   ];
 
   // ─── ABV CALCULATE ─────────────────────────────────────────────────────
   const handleABV = () => {
     setAbvError(''); setAbvResult(null);
-    const og = parseFloat(startSG), ogT = parseFloat(startTemp);
-    const fg = parseFloat(endSG),   fgT = parseFloat(endTemp);
-    if (isNaN(og) || isNaN(ogT) || isNaN(fg) || isNaN(fgT)) {
-      setAbvError('Please fill in all fields.'); return;
+    // toNumber, not parseFloat — the numeric pad hands back a decimal comma in
+    // Croatian locales and parseFloat would read "3,4" as 3.
+    const og = toNumber(startSG), ogT = toNumber(startTemp);
+    const fg = toNumber(endSG),   fgT = toNumber(endTemp);
+    if (og === null || ogT === null || fg === null || fgT === null) {
+      setAbvError(t(language, 'calcFillAll')); return;
     }
-    if (og < 900 || og > 1200) { setAbvError('Starting SG should be 900–1200.'); return; }
-    if (fg < 900 || fg > 1200) { setAbvError('Finishing SG should be 900–1200.'); return; }
-    if (fg >= og) { setAbvError('Finishing SG must be lower than starting SG.'); return; }
+    if (og < 900 || og > 1200) { setAbvError(t(language, 'calcStartSGRange')); return; }
+    if (fg < 900 || fg > 1200) { setAbvError(t(language, 'calcEndSGRange')); return; }
+    if (fg >= og) { setAbvError(t(language, 'calcEndBelowStart')); return; }
     if (ogT < 0 || ogT > 50 || fgT < 0 || fgT > 50) {
-      setAbvError('Temperature must be 0–50°C.'); return;
+      setAbvError(t(language, 'calcTempRange')); return;
     }
     const abv = calculateABV(og, ogT, fg, fgT);
-    if (abv < 0 || abv > 25) { setAbvError('Result out of range. Check inputs.'); return; }
+    if (abv < 0 || abv > 25) { setAbvError(t(language, 'calcAbvOutOfRange')); return; }
     setAbvResult({
       abv:         abv.toFixed(1),
       correctedOG: (correctSG(og, ogT) * 1000).toFixed(1),
@@ -77,20 +80,20 @@ export default function CalculatorScreen({ navigation }) {
   // ─── SO2 CALCULATE ─────────────────────────────────────────────────────
   const handleSO2 = () => {
     setSo2Error(''); setSo2Result(null);
-    const pHVal      = parseFloat(pH);
-    const currentVal = parseFloat(currentSO2);
-    const volVal     = parseFloat(volume);
-    if (isNaN(pHVal) || isNaN(currentVal) || isNaN(volVal)) {
-      setSo2Error('Please fill in all fields.'); return;
+    const pHVal      = toNumber(pH);
+    const currentVal = toNumber(currentSO2);
+    const volVal     = toNumber(volume);
+    if (pHVal === null || currentVal === null || volVal === null) {
+      setSo2Error(t(language, 'calcFillAll')); return;
     }
     if (pHVal < 2.8 || pHVal > 4.5) {
-      setSo2Error('pH should be between 2.8 and 4.5.'); return;
+      setSo2Error(t(language, 'calcPhRange')); return;
     }
     if (currentVal < 0 || currentVal > 200) {
-      setSo2Error('Current free SO₂ should be 0–200 mg/L.'); return;
+      setSo2Error(t(language, 'calcSo2Range')); return;
     }
     if (volVal <= 0 || volVal > 100000) {
-      setSo2Error('Please enter a valid volume in liters.'); return;
+      setSo2Error(t(language, 'calcVolumeInvalid')); return;
     }
     const target = wineType === 'sweet' ? 45 : getTargetFreeSO2(wineType, pHVal);
     if (currentVal >= target) {
@@ -99,13 +102,13 @@ export default function CalculatorScreen({ navigation }) {
     }
     let result;
     if (product === 'campden') {
-      const mgPerTablet = parseFloat(tabletMg) || 440;
+      const mgPerTablet = toNumber(tabletMg) || 440;
       const so2Needed   = (target - currentVal) * volVal;
       const tablets     = Math.ceil(so2Needed / mgPerTablet);
       result = { sufficient: false, target, current: currentVal,
                  tablets, mgPerTablet, so2Needed: (target - currentVal).toFixed(1) };
     } else {
-      const pct  = parseFloat(so2Pct) || 57;
+      const pct  = toNumber(so2Pct) || 57;
       const calc = calculateSO2Addition(target, currentVal, volVal, pct);
       result = { sufficient: false, target, current: currentVal, ...calc, pct };
     }

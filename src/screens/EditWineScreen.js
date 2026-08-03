@@ -97,8 +97,19 @@ export default function EditWineScreen({ route, navigation }) {
           value={vintage}
           onChangeText={setVintage}
           placeholder={t(language, 'vintagePlaceholder')}
+          keyboardType="number-pad"
           editable={!saving}
         />
+
+        <TextField
+          label={t(language, 'wineVolume')}
+          value={volume}
+          onChangeText={setVolume}
+          placeholder={t(language, 'volumePlaceholder')}
+          keyboardType="decimal-pad"
+          editable={!saving}
+        />
+        <Text style={styles.hint}>{t(language, 'volumeHint')}</Text>
 
         <Text style={styles.label}>{t(language, 'wineType')} *</Text>
         <TouchableOpacity style={styles.input}
@@ -141,14 +152,6 @@ export default function EditWineScreen({ route, navigation }) {
         )}
 
         <TextField
-          label={language === 'hr' ? 'Volumen (L)' : 'Volume (L)'}
-          value={volume}
-          onChangeText={setVolume}
-          placeholder="e.g. 50"
-          editable={!saving}
-        />
-
-        <TextField
           label={t(language, 'notes')}
           value={notes}
           onChangeText={setNotes}
@@ -180,6 +183,7 @@ const styles = StyleSheet.create({
   label:          { fontSize: 12, color: colors.textMuted,
                     textTransform: 'uppercase', letterSpacing: 1,
                     marginBottom: 6, marginTop: 16 },
+  hint:           { fontSize: 12, color: colors.textMuted, marginTop: 5 },
   input:          { backgroundColor: colors.surface, borderWidth: 1,
                     borderColor: colors.border, borderRadius: 8,
                     paddingHorizontal: 14, paddingVertical: 12,

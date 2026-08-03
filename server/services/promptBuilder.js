@@ -70,12 +70,49 @@ function formatEntry(e) {
 
   if (e.type === 'sulfur') {
     const parts = [`${e.amount ?? '?'} g/hL`, `product: ${e.product || '?'}`];
-    if (e.freeSo2) parts.push(`free SO₂ ${e.freeSo2} ppm`);
+    // Labelled as "before" on purpose — this is the reading that prompted the
+    // addition, not the level the wine sits at afterwards.
+    if (e.freeSo2) parts.push(`free SO₂ before addition ${e.freeSo2} ppm`);
     if (e.ph) parts.push(`pH ${e.ph}`);
     return `  - SO₂ addition (${date}): ${parts.join(', ')}${note}`;
   }
 
+  if (e.type === 'racking') {
+    const parts = [];
+    if (e.volumeRacked) parts.push(`${e.volumeRacked} L`);
+    if (e.lees) parts.push(`off ${e.lees} lees`);
+    if (e.vesselTo) parts.push(`into ${e.vesselTo}`);
+    if (e.method) parts.push(`by ${e.method}`);
+    return `  - Racking (${date}): ${parts.join(', ') || 'no detail'}${note}`;
+  }
+
+  if (e.type === 'measurement') {
+    const parts = [];
+    if (e.ph) parts.push(`pH ${e.ph}`);
+    if (e.freeSo2) parts.push(`free SO₂ ${e.freeSo2} ppm`);
+    if (e.totalSo2) parts.push(`total SO₂ ${e.totalSo2} ppm`);
+    if (e.ta) parts.push(`TA ${e.ta} g/L`);
+    if (e.temperature) parts.push(`temp ${e.temperature}°C`);
+    return `  - Lab measurement (${date}): ${parts.join(', ') || 'no values'}${note}`;
+  }
+
   return `  - Note (${date}): ${e.notes || ''}`;
+}
+
+// Free SO₂ on a measurement entry is where the wine currently sits. The same
+// field on a sulfur entry is the reading taken *before* that addition, so it is
+// only a fallback — otherwise a wine looks underprotected right after being
+// sulfited, which is the opposite of the truth.
+function currentFreeSo2(entries) {
+  const measured = entries.find(
+    (e) => e.type === 'measurement' && toNumber(e.freeSo2) !== null
+  );
+  if (measured) return toNumber(measured.freeSo2);
+
+  const beforeAddition = entries.find(
+    (e) => e.type === 'sulfur' && toNumber(e.freeSo2) !== null
+  );
+  return beforeAddition ? toNumber(beforeAddition.freeSo2) : null;
 }
 
 function densityTrendLine(entries) {
@@ -172,10 +209,7 @@ function computeDerivedFacts(wines, entriesByWineId) {
         ph,
         wineType: isWhiteLike(wine.type) ? 'white' : 'red',
         stage: latestDensity !== null && latestDensity > 1005 ? 'fermenting' : 'aging',
-        currentFreeSo2: latestValue(
-          entries.filter((e) => e.type === 'sulfur'),
-          (e) => toNumber(e.freeSo2)
-        ),
+        currentFreeSo2: currentFreeSo2(entries),
         volumeL: toNumber(wine.volume),
       });
       if (so2.ok) lines.push(`- ${label} — SO₂: ${so2.summary}`);
@@ -194,15 +228,8 @@ function computeRiskFlags(wines, entriesByWineId) {
 
     const label = wine.name || 'Wine';
 
-    // Latest pH from any typed entry; latest free SO₂ from sulfur entries.
-    let latestPh = null;
-    let latestFreeSo2 = null;
-    for (const e of entries) {
-      if (latestPh === null && toNumber(e.ph) !== null) latestPh = toNumber(e.ph);
-      if (e.type === 'sulfur' && latestFreeSo2 === null && toNumber(e.freeSo2) !== null) {
-        latestFreeSo2 = toNumber(e.freeSo2);
-      }
-    }
+    const latestPh = latestValue(entries, (e) => toNumber(e.ph));
+    const latestFreeSo2 = currentFreeSo2(entries);
 
     if (latestPh !== null && latestPh >= 3.6 && latestFreeSo2 !== null && latestFreeSo2 < 20) {
       risks.push(
@@ -251,16 +278,19 @@ function computeRiskFlags(wines, entriesByWineId) {
       }
     }
 
-    const latestSulfur = entries.find((e) => e.type === 'sulfur');
+    // A lab measurement counts as checking on SO₂ just as much as an addition does.
+    const latestSo2Touch = entries.find(
+      (e) => e.type === 'sulfur' || (e.type === 'measurement' && toNumber(e.freeSo2) !== null)
+    );
     const hasFermActivity = entries.some((e) => e.type === 'fermentation');
     if (hasFermActivity) {
-      if (!latestSulfur) {
+      if (!latestSo2Touch) {
         risks.push(`- ${label}: fermentation activity recorded, no SO₂ entry yet — check protection`);
       } else {
-        const age = daysSince(entryDate(latestSulfur));
+        const age = daysSince(entryDate(latestSo2Touch));
         if (age !== null && age > 30) {
           risks.push(
-            `- ${label}: last SO₂ entry ${age} days ago — free SO₂ may be low, measure again`
+            `- ${label}: free SO₂ last looked at ${age} days ago — measure again`
           );
         }
       }
@@ -300,6 +330,10 @@ Rules you must always follow:
 - LOGBOOK — PRIORITY OVER GENERAL ADVICE:
   - Always start from the user's actual logbook numbers (density, temperature, pH, free SO₂, sugar, yeast) before any general knowledge.
   - Name the wine and quote the relevant values in the answer. Do not give generic advice when numbers exist.
+  - Entries come in five kinds: fermentation readings, SO₂ additions, rackings, lab measurements and notes.
+    A lab measurement is the current state of the wine. A figure marked "free SO₂ before addition" is the
+    reading that triggered that addition, so never treat it as where the wine sits today.
+  - Rackings tell you about oxygen exposure and time on lees — use their dates when timing the next step.
   - If CURRENT RISKS lists a problem for that wine, mention it in one short sentence even if the user did not ask — then continue answering their question.
   - Prefer the wine the user named. If it is unclear which wine they mean and they have more than one, ask which wine.
   - Stay short: 2–5 sentences. A risk mention must not make the answer chatty.

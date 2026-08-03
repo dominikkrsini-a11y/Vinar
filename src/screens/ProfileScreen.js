@@ -22,7 +22,7 @@ const REGIONS = [
   'Srednja i Južna Dalmacija', 'Sjeverna Dalmacija',
 ];
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const { language, setLanguage } = useContext(LanguageContext);
   const [loading,     setLoading]     = useState(true);
   const [saving,      setSaving]      = useState(false);
@@ -259,6 +259,16 @@ export default function ProfileScreen() {
         label={t(language, 'saveProfile')}
       />
 
+      <TouchableOpacity
+        style={styles.linkCard}
+        onPress={() => navigation.navigate('Marketplace')}>
+        <Text style={styles.linkIcon}>🛒</Text>
+        <View>
+          <Text style={styles.linkTitle}>{t(language, 'marketplace')}</Text>
+          <Text style={styles.linkSub}>{t(language, 'marketplaceSub')}</Text>
+        </View>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>{t(language, 'logout')}</Text>
       </TouchableOpacity>
@@ -309,6 +319,13 @@ const styles = StyleSheet.create({
   langLabel:      { fontSize: 14, color: colors.textMuted },
   langLabelActive:{ color: colors.gold },
   button:         { marginTop: 32 },
+  linkCard:       { flexDirection: 'row', alignItems: 'center', gap: 14,
+                    backgroundColor: colors.surface, borderRadius: 10,
+                    borderWidth: 1, borderColor: colors.border,
+                    padding: 16, marginTop: 28 },
+  linkIcon:       { fontSize: 26 },
+  linkTitle:      { fontSize: 15, color: colors.textPrimary, fontWeight: '600' },
+  linkSub:        { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   logoutButton:   { alignItems: 'center', marginTop: 20, paddingVertical: 12 },
   logoutText:     { color: colors.textMuted, fontSize: 14 },
 });

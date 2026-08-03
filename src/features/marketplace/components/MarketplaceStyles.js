@@ -7,6 +7,8 @@ export const marketplaceStyles = StyleSheet.create({
                         alignItems: 'center', padding: 20, paddingTop: 52,
                         backgroundColor: colors.surface,
                         borderBottomWidth: 1, borderBottomColor: colors.border },
+  headerLeft:         { flex: 1, gap: 6 },
+  backText:           { color: colors.gold, fontSize: 14 },
   headerTitle:        { fontSize: 20, color: colors.gold, fontWeight: '700' },
   tabs:               { flexDirection: 'row', backgroundColor: colors.surface,
                         borderBottomWidth: 1, borderBottomColor: colors.border },

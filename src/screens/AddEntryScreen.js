@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity,
   StyleSheet, ScrollView, Alert,
@@ -8,13 +8,24 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { addEntry } from '../firebase/firestore';
+import { addEntry, getEntries } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { TextField } from '../components/ui/TextField';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { normalizeDecimal, toNumber } from '../utils/numbers';
+import {
+  daysSince, formatDayCount, formatDaysAgo, isoForDaysAgo, parseTypedDate,
+} from '../utils/dates';
+import {
+  ENTRY_TYPES,
+  chipGroupsForType,
+  fieldLabel,
+  fieldsForType,
+  isWithinRanges,
+} from '../logbook/entrySchema';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -53,47 +64,103 @@ const scheduleReminder = async (wineName, days, language) => {
   });
 };
 
+const DATE_CHOICES = [
+  { offset: 0, labelKey: 'today' },
+  { offset: 1, labelKey: 'yesterday' },
+  { offset: 2, labelKey: 'dayBefore' },
+];
+
+// Yeast and SO₂ product almost never change between entries, so the last one is
+// offered again instead of being retyped in the cellar.
+const REMEMBERED_FIELDS = ['yeast', 'product'];
+
+// A numeric pad with a separator, so a typed date needs no letters. Android has
+// no punctuation pad, and its decimal key is what parseTypedDate splits on.
+const DATE_KEYBOARD = Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'decimal-pad';
+
 export default function AddEntryScreen({ route, navigation }) {
   const { wine } = route.params;
   const { language } = useContext(LanguageContext);
 
-  const [type,              setType]              = useState('fermentation');
-  const [temperature,       setTemperature]       = useState('');
-  const [density,           setDensity]           = useState('');
-  const [sugar,             setSugar]             = useState('');
-  const [ph,                setPh]                = useState('');
-  const [yeast,             setYeast]             = useState('');
-  const [amount,            setAmount]            = useState('');
-  const [product,           setProduct]           = useState('');
-  const [freeSo2,           setFreeSo2]           = useState('');
-  const [notes,             setNotes]             = useState('');
-  const [saving,            setSaving]            = useState(false);
-  const [showReminder,      setShowReminder]      = useState(false);
+  const [type,         setType]         = useState('fermentation');
+  const [values,       setValues]       = useState({});
+  const [notes,        setNotes]        = useState('');
+  const [dateChoice,   setDateChoice]   = useState(0);
+  const [manualDate,   setManualDate]   = useState('');
+  const [history,      setHistory]      = useState([]);
+  const [saving,       setSaving]       = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
 
-  const ENTRY_TYPES = [
-    { key: 'fermentation', label: t(language, 'fermentation'), icon: '🌡️' },
-    { key: 'sulfur',       label: t(language, 'sulfur'),       icon: '🧪' },
-    { key: 'note',         label: t(language, 'note'),         icon: '📝' },
-  ];
+  // Previous entries are read once so the form can show the last reading next to
+  // each field and reuse the yeast and SO₂ product the winemaker already used.
+  // The form stays usable if this fails — it is a convenience, not a dependency.
+  useEffect(() => {
+    let active = true;
+    getEntries(auth.currentUser.uid, wine.id)
+      .then((data) => {
+        if (!active) return;
+        setHistory(data);
+        setValues((prev) => {
+          const next = { ...prev };
+          for (const field of REMEMBERED_FIELDS) {
+            if (next[field]) continue;
+            const previous = data.find((e) => e[field])?.[field];
+            if (previous) next[field] = previous;
+          }
+          return next;
+        });
+      })
+      .catch((e) => reportError(e, { screen: 'AddEntry', action: 'loadHistory' }));
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load once for the screen's lifetime
+  }, []);
 
-  const handleSave = () => {
+  const fields = fieldsForType(type);
+  const chipGroups = chipGroupsForType(type);
+
+  const setValue = (name, value) => setValues((prev) => ({ ...prev, [name]: value }));
+
+  // The newest earlier entry that recorded this field, whatever its type — pH and
+  // free SO₂ are logged from several types and the most recent one is what counts.
+  const lastReadingFor = (field) => {
+    if (!field.numeric) return null;
+    const previous = history.find((e) => e[field.name] !== undefined && e[field.name] !== '');
+    if (!previous) return null;
+    return { value: previous[field.name], days: daysSince(previous.createdAt) };
+  };
+
+  const resolveCreatedAt = () => {
+    if (dateChoice !== 'other') return isoForDaysAgo(dateChoice);
+    return parseTypedDate(manualDate);
+  };
+
+  const collectEntryData = () => {
+    const data = { type };
+    for (const field of fields) {
+      const raw = values[field.name];
+      if (raw === undefined || String(raw).trim() === '') continue;
+      data[field.name] = field.numeric ? normalizeDecimal(raw) : String(raw).trim();
+    }
+    for (const group of chipGroups) {
+      if (values[group.name]) data[group.name] = values[group.name];
+    }
+    if (notes.trim()) data.notes = notes.trim();
+    return data;
+  };
+
+  // Bounds are a nudge, not a rule — a real reading outside them still saves.
+  const outOfRangeField = () => {
+    for (const field of fields) {
+      if (!field.numeric) continue;
+      const n = toNumber(values[field.name]);
+      if (n === null) continue;
+      if (!isWithinRanges(n, field.ranges)) return field;
+    }
+    return null;
+  };
+
+  const persist = (entryData) => {
     setSaving(true);
-    const entryData = { type };
-    if (type === 'fermentation') {
-      if (temperature) entryData.temperature = temperature;
-      if (density)     entryData.density     = density;
-      if (sugar)       entryData.sugar       = sugar;
-      if (ph)          entryData.ph          = ph;
-      if (yeast)       entryData.yeast       = yeast;
-    }
-    if (type === 'sulfur') {
-      if (amount)  entryData.amount  = amount;
-      if (product) entryData.product = product;
-      if (freeSo2) entryData.freeSo2 = freeSo2;
-      if (ph)      entryData.ph      = ph;
-    }
-    if (notes) entryData.notes = notes;
-
     // Don't await — write promises don't resolve until the backend
     // acknowledges the write, so awaiting would hang the UI indefinitely
     // while offline. The entry is written to the local cache immediately.
@@ -103,11 +170,42 @@ export default function AddEntryScreen({ route, navigation }) {
 
     setSaving(false);
     if (type === 'sulfur') {
-      // Show reminder modal before going back
       setShowReminder(true);
     } else {
       navigation.goBack();
     }
+  };
+
+  const handleSave = () => {
+    const createdAt = resolveCreatedAt();
+    if (!createdAt) {
+      Alert.alert(t(language, 'checkValueTitle'), t(language, 'invalidDate'));
+      return;
+    }
+
+    const entryData = { ...collectEntryData(), createdAt };
+    const hasContent = Object.keys(entryData).some((k) => k !== 'type' && k !== 'createdAt');
+    if (!hasContent) {
+      Alert.alert(t(language, 'emptyEntryTitle'), t(language, 'emptyEntryMsg'));
+      return;
+    }
+
+    const suspect = outOfRangeField();
+    if (suspect) {
+      const [min, max] = suspect.ranges[suspect.ranges.length - 1];
+      Alert.alert(
+        t(language, 'checkValueTitle'),
+        `${fieldLabel(suspect, t, language)}: ${values[suspect.name]}\n\n` +
+          `${t(language, 'usualRange')}: ${min}–${max}`,
+        [
+          { text: t(language, 'cancel'), style: 'cancel' },
+          { text: t(language, 'saveAnyway'), onPress: () => persist(entryData) },
+        ]
+      );
+      return;
+    }
+
+    persist(entryData);
   };
 
   const handleReminderPick = async (days) => {
@@ -138,7 +236,7 @@ export default function AddEntryScreen({ route, navigation }) {
                 style={styles.modalItem}
                 onPress={() => handleReminderPick(days)}>
                 <Text style={styles.modalItemText}>
-                  {days} {language === 'hr' ? 'dana' : 'days'}
+                  {formatDayCount(language, days)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -170,100 +268,95 @@ export default function AddEntryScreen({ route, navigation }) {
               onPress={() => setType(et.key)}>
               <Text style={styles.typeIcon}>{et.icon}</Text>
               <Text style={[styles.typeLabel, type === et.key && styles.typeLabelActive]}>
-                {et.label}
+                {t(language, et.labelKey)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {type === 'fermentation' && (
-          <>
-            <TextField
-              label={t(language, 'temperature')}
-              value={temperature}
-              onChangeText={setTemperature}
-              placeholder={t(language, 'tempPlaceholder')}
-              editable={!saving}
-            />
+        <Text style={styles.label}>{t(language, 'entryDate')}</Text>
+        <View style={styles.chipRow}>
+          {DATE_CHOICES.map(choice => (
+            <TouchableOpacity key={choice.offset}
+              style={[styles.chip, dateChoice === choice.offset && styles.chipActive]}
+              onPress={() => setDateChoice(choice.offset)}>
+              <Text style={[styles.chipText, dateChoice === choice.offset && styles.chipTextActive]}>
+                {t(language, choice.labelKey)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={[styles.chip, dateChoice === 'other' && styles.chipActive]}
+            onPress={() => setDateChoice('other')}>
+            <Text style={[styles.chipText, dateChoice === 'other' && styles.chipTextActive]}>
+              {t(language, 'otherDate')}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-            <TextField
-              label={t(language, 'density')}
-              value={density}
-              onChangeText={setDensity}
-              placeholder={t(language, 'densityPlaceholder')}
-              editable={!saving}
-            />
-
-            <TextField
-              label={t(language, 'sugar')}
-              value={sugar}
-              onChangeText={setSugar}
-              placeholder={t(language, 'sugarPlaceholder')}
-              editable={!saving}
-            />
-
-            <TextField
-              label="pH"
-              value={ph}
-              onChangeText={setPh}
-              placeholder="e.g. 3.4"
-              editable={!saving}
-            />
-
-            <TextField
-              label={language === 'hr' ? 'Soj kvasca' : 'Yeast Strain'}
-              value={yeast}
-              onChangeText={setYeast}
-              placeholder="e.g. Lalvin QA23"
-              editable={!saving}
-            />
-          </>
+        {dateChoice === 'other' && (
+          <TextField
+            style={styles.field}
+            value={manualDate}
+            onChangeText={setManualDate}
+            placeholder={t(language, 'datePlaceholder')}
+            keyboardType={DATE_KEYBOARD}
+            editable={!saving}
+          />
         )}
 
-        {type === 'sulfur' && (
-          <>
-            <TextField
-              label={language === 'hr' ? 'Količina (g/hL)' : 'Amount (g/hL)'}
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="e.g. 5"
-              editable={!saving}
-            />
+        {fields.map(field => {
+          const last = lastReadingFor(field);
+          return (
+            <View key={`${type}-${field.name}`} style={styles.field}>
+              <TextField
+                label={fieldLabel(field, t, language)}
+                value={values[field.name] ?? ''}
+                onChangeText={(v) => setValue(field.name, v)}
+                placeholder={t(language, field.placeholderKey)}
+                keyboardType={field.numeric ? 'decimal-pad' : undefined}
+                editable={!saving}
+              />
+              {last ? (
+                <Text style={styles.hint}>
+                  {t(language, 'lastValue')}: {last.value}
+                  {field.unit ? ` ${field.unit}` : ''} · {formatDaysAgo(language, last.days)}
+                </Text>
+              ) : null}
+            </View>
+          );
+        })}
 
-            <TextField
-              label={t(language, 'productUsed')}
-              value={product}
-              onChangeText={setProduct}
-              placeholder={t(language, 'productPlaceholder')}
-              editable={!saving}
-            />
+        {chipGroups.map(group => (
+          <View key={`${type}-${group.name}`} style={styles.field}>
+            <Text style={styles.label}>{t(language, group.labelKey)}</Text>
+            <View style={styles.chipRow}>
+              {group.options.map(option => {
+                const active = values[group.name] === option.value;
+                return (
+                  <TouchableOpacity key={option.value}
+                    style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => setValue(group.name, active ? '' : option.value)}>
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                      {t(language, option.labelKey)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        ))}
 
-            <TextField
-              label={language === 'hr' ? 'Slobodni SO₂ prije (ppm)' : 'Free SO₂ Before (ppm)'}
-              value={freeSo2}
-              onChangeText={setFreeSo2}
-              placeholder="e.g. 18"
-              editable={!saving}
-            />
-
-            <TextField
-              label="pH"
-              value={ph}
-              onChangeText={setPh}
-              placeholder="e.g. 3.4"
-              editable={!saving}
-            />
-          </>
-        )}
-
-        <TextField
-          label={t(language, 'observations')}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder={t(language, 'observationsPlaceholder')}
-          editable={!saving}
-          multiline
-        />
+        <View style={styles.field}>
+          <TextField
+            label={t(language, 'observations')}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder={t(language, 'observationsPlaceholder')}
+            editable={!saving}
+            multiline
+          />
+        </View>
 
         <PrimaryButton
           style={styles.button}
@@ -288,19 +381,25 @@ const styles = StyleSheet.create({
   label:            { fontSize: 12, color: colors.textMuted,
                       textTransform: 'uppercase', letterSpacing: 1,
                       marginBottom: 6, marginTop: 16 },
-  typeRow:          { flexDirection: 'row', gap: 8 },
-  typeBtn:          { flex: 1, backgroundColor: colors.surface, borderRadius: 8,
+  typeRow:          { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  typeBtn:          { minWidth: '30%', flexGrow: 1,
+                      backgroundColor: colors.surface, borderRadius: 8,
                       borderWidth: 1, borderColor: colors.border,
-                      alignItems: 'center', paddingVertical: 10 },
+                      alignItems: 'center', paddingVertical: 10,
+                      paddingHorizontal: 4 },
   typeBtnActive:    { borderColor: colors.gold, backgroundColor: colors.surfaceDeep },
   typeIcon:         { fontSize: 20, marginBottom: 4 },
   typeLabel:        { fontSize: 11, color: colors.textMuted, textAlign: 'center' },
   typeLabelActive:  { color: colors.gold },
-  input:            { backgroundColor: colors.surface, borderWidth: 1,
-                      borderColor: colors.border, borderRadius: 8,
-                      paddingHorizontal: 14, paddingVertical: 12,
-                      color: colors.textPrimary, fontSize: 15 },
-  textArea:         { height: 100, textAlignVertical: 'top' },
+  chipRow:          { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip:             { backgroundColor: colors.surface, borderRadius: 16,
+                      borderWidth: 1, borderColor: colors.border,
+                      paddingHorizontal: 14, paddingVertical: 8 },
+  chipActive:       { borderColor: colors.gold, backgroundColor: colors.surfaceDeep },
+  chipText:         { fontSize: 13, color: colors.textMuted },
+  chipTextActive:   { color: colors.gold, fontWeight: '600' },
+  field:            { marginTop: 16 },
+  hint:             { fontSize: 12, color: colors.textMuted, marginTop: 5 },
   button:           { marginTop: 32 },
 
   // Reminder modal

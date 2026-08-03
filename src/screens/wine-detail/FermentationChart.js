@@ -1,5 +1,6 @@
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../../theme/colors';
+import { densityAsGL } from '../../utils/numbers';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -9,8 +10,11 @@ const formatShortDate = (iso) => {
 };
 
 export function FermentationChart({ entries, language }) {
+  // Readings are normalised to g/L so a logbook mixing 1.080 and 1080 still plots
+  // as one continuous curve.
   const fermEntries = [...(entries || [])]
-    .filter((e) => e.type === 'fermentation' && e.density && !isNaN(parseFloat(e.density)))
+    .map((e) => ({ ...e, densityGL: densityAsGL(e.density) }))
+    .filter((e) => e.type === 'fermentation' && e.densityGL !== null)
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
   if (fermEntries.length < 2) return null;
@@ -22,7 +26,7 @@ export function FermentationChart({ entries, language }) {
   const PAD_RIGHT = 16;
   const chartW = SCREEN_WIDTH - 32 - PAD_LEFT - PAD_RIGHT;
 
-  const densities = fermEntries.map((e) => parseFloat(e.density));
+  const densities = fermEntries.map((e) => e.densityGL);
   const rawMin = Math.min(...densities);
   const rawMax = Math.max(...densities);
   const padding = (rawMax - rawMin) * 0.15 || 5;
@@ -35,20 +39,20 @@ export function FermentationChart({ entries, language }) {
 
   const points = fermEntries.map((e, i) => ({
     x: toX(i),
-    y: toY(parseFloat(e.density)),
-    d: parseFloat(e.density),
+    y: toY(e.densityGL),
+    d: e.densityGL,
     date: formatShortDate(e.createdAt),
   }));
 
   const yLabels = [rawMax, (rawMax + rawMin) / 2, rawMin].map((v) => ({
-    value: v.toFixed(3),
+    value: Math.round(v).toString(),
     y: toY(v),
   }));
 
   return (
     <View style={styles.chartCard}>
       <Text style={styles.chartTitle}>
-        {language === 'hr' ? 'Gustoća — fermentacija' : 'Density — fermentation'}
+        {language === 'hr' ? 'Gustoća — vrenje (g/L)' : 'Density — fermentation (g/L)'}
       </Text>
       <View style={{ height: CHART_H, flexDirection: 'row' }}>
         <View style={{ width: PAD_LEFT, height: CHART_H }}>
@@ -94,7 +98,7 @@ export function FermentationChart({ entries, language }) {
             <View key={`dot_${i}`}>
               <View style={[styles.chartDot, { left: p.x - 5, top: p.y - 5 }]} />
               <Text style={[styles.chartDotLabel, { left: p.x - 20, top: p.y - 20 }]}>
-                {p.d.toFixed(3)}
+                {Math.round(p.d)}
               </Text>
               <Text
                 style={[

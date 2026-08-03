@@ -14,12 +14,16 @@ import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
 import { buildWinePdfHtml } from './wine-detail/buildWinePdfHtml';
 import { FermentationChart } from './wine-detail/FermentationChart';
-
-const ENTRY_ICONS = {
-  fermentation: '🌡️',
-  sulfur:       '🧪',
-  note:         '📝',
-};
+import {
+  ENTRY_ICONS,
+  chipGroupsForType,
+  chipValueLabel,
+  entryTypeLabelKey,
+  fieldLabel,
+  fieldsForType,
+} from '../logbook/entrySchema';
+import { getWineStatus, STATUS_TONES } from '../utils/wineStatus';
+import { formatDaysAgo } from '../utils/dates';
 
 export default function WineDetailScreen({ route, navigation }) {
   const { wine } = route.params;
@@ -54,11 +58,7 @@ export default function WineDetailScreen({ route, navigation }) {
     });
   };
 
-  const getEntryTypeLabel = (type) => {
-    if (type === 'fermentation') return t(language, 'fermentation');
-    if (type === 'sulfur')       return t(language, 'sulfur');
-    return t(language, 'note');
-  };
+  const getEntryTypeLabel = (type) => t(language, entryTypeLabelKey(type));
 
   // ─── PDF Export ───────────────────────────────────────────────────────────
 
@@ -86,36 +86,33 @@ export default function WineDetailScreen({ route, navigation }) {
   };
   // ─────────────────────────────────────────────────────────────────────────
 
-  const renderEntryDetail = (entry) => {
-    if (entry.type === 'fermentation') {
-      return (
-        <View style={styles.entryDetails}>
-          {entry.temperature ? <Text style={styles.detailText}>🌡 {entry.temperature}°C</Text> : null}
-          {entry.density     ? <Text style={styles.detailText}>⚖️ {entry.density} g/L</Text> : null}
-          {entry.sugar       ? <Text style={styles.detailText}>🍬 {entry.sugar} g/L</Text> : null}
-          {entry.ph          ? <Text style={styles.detailText}>🔬 pH {entry.ph}</Text> : null}
-          {entry.yeast       ? <Text style={styles.detailText}>🦠 {entry.yeast}</Text> : null}
-          {entry.notes       ? <Text style={styles.noteText}>{entry.notes}</Text> : null}
-        </View>
-      );
-    }
-    if (entry.type === 'sulfur') {
-      return (
-        <View style={styles.entryDetails}>
-          {entry.amount  ? <Text style={styles.detailText}>💊 {entry.amount} g/hL SO₂</Text> : null}
-          {entry.product ? <Text style={styles.detailText}>📦 {entry.product}</Text> : null}
-          {entry.freeSo2 ? <Text style={styles.detailText}>📊 Free SO₂ before: {entry.freeSo2} ppm</Text> : null}
-          {entry.ph      ? <Text style={styles.detailText}>🔬 pH {entry.ph}</Text> : null}
-          {entry.notes   ? <Text style={styles.noteText}>{entry.notes}</Text> : null}
-        </View>
-      );
-    }
-    return (
-      <View style={styles.entryDetails}>
-        {entry.notes ? <Text style={styles.noteText}>{entry.notes}</Text> : null}
-      </View>
-    );
-  };
+  const status = getWineStatus(wine, entries);
+
+  // Driven by the shared entry schema, so a field added to the form shows up here
+  // without a second edit.
+  const renderEntryDetail = (entry) => (
+    <View style={styles.entryDetails}>
+      {fieldsForType(entry.type).map((field) => {
+        const value = entry[field.name];
+        if (value === undefined || value === '') return null;
+        return (
+          <Text key={field.name} style={styles.detailText}>
+            {field.icon ? `${field.icon} ` : ''}
+            {fieldLabel(field, t, language)}: {value}
+          </Text>
+        );
+      })}
+      {chipGroupsForType(entry.type).map((group) => {
+        if (!entry[group.name]) return null;
+        return (
+          <Text key={group.name} style={styles.detailText}>
+            {chipValueLabel(entry.type, group.name, entry[group.name], t, language)}
+          </Text>
+        );
+      })}
+      {entry.notes ? <Text style={styles.noteText}>{entry.notes}</Text> : null}
+    </View>
+  );
 
   const handleDeleteWine = () => {
     Alert.alert(
@@ -194,6 +191,37 @@ export default function WineDetailScreen({ route, navigation }) {
           {[wine.type, wine.grape, wine.vintage].filter(Boolean).join(' · ')}
           {wine.volume ? `  ·  ${wine.volume} L` : ''}
         </Text>
+
+        {loading ? null : (
+          <View style={styles.statusRow}>
+            <View style={[
+              styles.statusBadge,
+              STATUS_TONES[status.tone] && { borderColor: STATUS_TONES[status.tone] },
+            ]}>
+              <Text style={[
+                styles.statusBadgeText,
+                STATUS_TONES[status.tone] && { color: STATUS_TONES[status.tone] },
+              ]}>
+                {t(language, status.key)}
+              </Text>
+            </View>
+            {status.daysSinceEntry !== null ? (
+              <Text style={styles.statusAge}>
+                {t(language, 'lastEntryLabel')}: {formatDaysAgo(language, status.daysSinceEntry)}
+              </Text>
+            ) : null}
+          </View>
+        )}
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Main', {
+            screen: 'Assistant',
+            params: { wine },
+          })}
+          style={styles.askAiBtn}>
+          <Text style={styles.askAiBtnText}>💬 {t(language, 'askAi')}</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={handleDeleteWine} style={styles.deleteWineBtn}>
           <Text style={styles.deleteWineBtnText}>
             {language === 'hr' ? 'Obriši vino' : 'Delete wine'}
@@ -263,7 +291,17 @@ const styles = StyleSheet.create({
   editBtnText:       { color: colors.background, fontSize: 13, fontWeight: '600' },
   wineName:          { fontSize: 24, color: colors.textPrimary, fontWeight: '700' },
   wineMeta:          { fontSize: 13, color: colors.textMuted, marginTop: 4 },
-  deleteWineBtn:     { marginTop: 10, alignSelf: 'flex-start' },
+  statusRow:         { flexDirection: 'row', alignItems: 'center',
+                       flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  statusBadge:       { borderWidth: 1, borderColor: colors.border,
+                       borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  statusBadgeText:   { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
+  statusAge:         { fontSize: 12, color: colors.textMuted },
+  askAiBtn:          { marginTop: 14, borderWidth: 1, borderColor: colors.gold,
+                       borderRadius: 20, paddingVertical: 10,
+                       alignItems: 'center', alignSelf: 'stretch' },
+  askAiBtnText:      { color: colors.gold, fontSize: 14, fontWeight: '600' },
+  deleteWineBtn:     { marginTop: 14, alignSelf: 'flex-start' },
   deleteWineBtnText: { color: '#e07070', fontSize: 13 },
   center:            { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:              { flex: 1 },

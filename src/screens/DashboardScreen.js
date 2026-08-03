@@ -10,13 +10,15 @@ import { getUserProfile, getEntries, subscribeToWines } from '../firebase/firest
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
+import { getWineStatus, STATUS_TONES } from '../utils/wineStatus';
+import { formatDaysAgo } from '../utils/dates';
 
 export default function DashboardScreen({ navigation }) {
   const [profile,         setProfile]         = useState(null);
   const [wines,           setWines]           = useState([]);
   const [loading,         setLoading]         = useState(true);
   const [showWinePicker,  setShowWinePicker]  = useState(false);
-  const [entryCount,      setEntryCount]      = useState(0);
+  const [entriesByWine,   setEntriesByWine]   = useState({});
   const { language } = useContext(LanguageContext);
 
   // Live wines list — serves cached data immediately offline and updates
@@ -27,10 +29,17 @@ export default function DashboardScreen({ navigation }) {
     const unsubscribe = subscribeToWines(uid, async (winesData) => {
       setWines(winesData);
       try {
-        const counts = await Promise.all(
+        // These entries were already being read to count them; keeping them lets
+        // each card show a status without any extra Firestore reads.
+        const lists = await Promise.all(
           winesData.map(w => getEntries(uid, w.id))
         );
-        setEntryCount(counts.reduce((sum, e) => sum + e.length, 0));
+        setEntriesByWine(
+          winesData.reduce((acc, w, i) => {
+            acc[w.id] = lists[i];
+            return acc;
+          }, {})
+        );
       } catch (e) {
         reportError(e, { screen: 'Dashboard', action: 'loadEntryCounts' });
       }
@@ -82,6 +91,7 @@ export default function DashboardScreen({ navigation }) {
 
   const firstName  = profile?.firstName || '';
   const wineryName = profile?.wineryName || '';
+  const entryCount = Object.values(entriesByWine).reduce((sum, list) => sum + list.length, 0);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -138,25 +148,44 @@ export default function DashboardScreen({ navigation }) {
         </View>
       </View>
 
-      {wines.length > 0 && (
+      {wines.length > 0 ? (
         <>
           <Text style={styles.sectionTitle}>{t(language, 'yourWines')}</Text>
-          {wines.map(wine => (
-            <TouchableOpacity
-              key={wine.id}
-              style={styles.wineCard}
-              onPress={() => navigation.navigate('WineDetail', { wine })}
-            >
-              <View style={styles.wineLeft}>
-                <Text style={styles.wineName}>{wine.name}</Text>
-                <Text style={styles.wineMeta}>
-                  {[wine.type, wine.grape, wine.vintage].filter(Boolean).join(' · ')}
-                </Text>
-              </View>
-              <Text style={styles.wineYear}>{wine.vintage || ''}</Text>
-            </TouchableOpacity>
-          ))}
+          {wines.map(wine => {
+            const status = getWineStatus(wine, entriesByWine[wine.id]);
+            const tone = STATUS_TONES[status.tone];
+            return (
+              <TouchableOpacity
+                key={wine.id}
+                style={styles.wineCard}
+                onPress={() => navigation.navigate('WineDetail', { wine })}
+              >
+                <View style={styles.wineLeft}>
+                  <Text style={styles.wineName}>{wine.name}</Text>
+                  <Text style={styles.wineMeta}>
+                    {[wine.type, wine.grape, wine.vintage].filter(Boolean).join(' · ')}
+                  </Text>
+                  <View style={styles.wineStatusRow}>
+                    <Text style={[styles.wineStatus, tone && { color: tone }]}>
+                      {t(language, status.key)}
+                    </Text>
+                    {status.daysSinceEntry !== null ? (
+                      <Text style={styles.wineStatusAge}>
+                        · {formatDaysAgo(language, status.daysSinceEntry)}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+                <Text style={styles.wineYear}>{wine.vintage || ''}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </>
+      ) : (
+        <View style={styles.emptyWines}>
+          <Text style={styles.emptyWinesTitle}>{t(language, 'noWinesTitle')}</Text>
+          <Text style={styles.emptyWinesSub}>{t(language, 'noWinesSub')}</Text>
+        </View>
       )}
 
       <Text style={styles.sectionTitle}>{t(language, 'quickActions')}</Text>
@@ -215,7 +244,17 @@ const styles = StyleSheet.create({
   wineLeft:        { flex: 1 },
   wineName:        { fontSize: 15, color: colors.textPrimary, fontWeight: '600' },
   wineMeta:        { fontSize: 12, color: colors.textMuted, marginTop: 3 },
+  wineStatusRow:   { flexDirection: 'row', alignItems: 'center',
+                     flexWrap: 'wrap', marginTop: 6 },
+  wineStatus:      { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
+  wineStatusAge:   { fontSize: 12, color: colors.textMuted, marginLeft: 4 },
   wineYear:        { fontSize: 18, color: colors.gold, fontWeight: '700' },
+  emptyWines:      { backgroundColor: colors.surface, borderRadius: 10,
+                     borderWidth: 1, borderColor: colors.border,
+                     padding: 20, marginBottom: 32, alignItems: 'center' },
+  emptyWinesTitle: { fontSize: 15, color: colors.textPrimary, fontWeight: '600' },
+  emptyWinesSub:   { fontSize: 13, color: colors.textMuted,
+                     marginTop: 6, textAlign: 'center' },
   actionCard:      { backgroundColor: colors.surface, borderRadius: 10,
                      borderWidth: 1, borderColor: colors.border,
                      flexDirection: 'row', alignItems: 'center',
