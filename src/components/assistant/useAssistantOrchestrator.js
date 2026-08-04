@@ -7,7 +7,7 @@ import { reportError } from '../../utils/reportError';
 import { buildUserContent } from './buildUserContent';
 import { captureCameraImage } from './camera';
 
-export function useAssistantOrchestrator({ language, t }) {
+export function useAssistantOrchestrator({ language, t, focusWine }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,14 +57,15 @@ export function useAssistantOrchestrator({ language, t }) {
   const sendMessage = async () => {
     if ((!input.trim() && !pendingImage) || loading) return;
 
-    const { userContent, displayImage } = await buildUserContent({
+    const { userContent, displayImage, displayText } = await buildUserContent({
       language,
       inputText: input,
       pendingImage,
+      focusWine,
       reportError,
     });
 
-    const userMessage = { role: 'user', content: userContent, displayImage };
+    const userMessage = { role: 'user', content: userContent, displayImage, displayText };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');

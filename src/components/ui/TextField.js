@@ -11,6 +11,7 @@ export function TextField({
   multiline,
   editable,
   maxLength,
+  autoCapitalize,
   style,
 }) {
   return (
@@ -27,6 +28,7 @@ export function TextField({
         multiline={multiline}
         editable={editable}
         maxLength={maxLength}
+        autoCapitalize={autoCapitalize}
       />
     </View>
   );

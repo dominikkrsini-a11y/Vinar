@@ -1,7 +1,24 @@
 import { imageUriToBase64 } from './imageBase64';
 import { Alert } from 'react-native';
 
-export async function buildUserContent({ language, inputText, pendingImage, reportError }) {
+// Naming the wine in the message is what makes the assistant focus on it — the
+// server prompt already prefers "the wine the user named" (see the LOGBOOK rules
+// in server/services/promptBuilder.js). So a pinned wine is stated in the text
+// sent upstream rather than only shown in the UI, and the bubble keeps displaying
+// what the winemaker actually typed.
+function withWineContext(text, focusWine, language) {
+  if (!focusWine?.name) return text;
+  const label = [focusWine.name, focusWine.vintage].filter(Boolean).join(' ');
+  return language === 'hr' ? `Vino: ${label}. ${text}` : `Wine: ${label}. ${text}`;
+}
+
+export async function buildUserContent({
+  language,
+  inputText,
+  pendingImage,
+  focusWine,
+  reportError,
+}) {
   const userContent = [];
   let displayImage = null;
 
@@ -29,15 +46,18 @@ export async function buildUserContent({ language, inputText, pendingImage, repo
   }
 
   const trimmed = (inputText || '').trim();
-  if (trimmed) {
-    userContent.push({ type: 'text', text: trimmed });
-  } else if (pendingImage) {
+  const imageOnlyPrompt = language === 'hr'
+    ? 'Što možete reći o ovoj slici?'
+    : 'What can you tell me about this image?';
+  const displayText = trimmed || (pendingImage ? imageOnlyPrompt : '');
+
+  if (displayText) {
     userContent.push({
       type: 'text',
-      text: language === 'hr' ? 'Što možete reći o ovoj slici?' : 'What can you tell me about this image?',
+      text: withWineContext(displayText, focusWine, language),
     });
   }
 
-  return { userContent, displayImage };
+  return { userContent, displayImage, displayText };
 }
 

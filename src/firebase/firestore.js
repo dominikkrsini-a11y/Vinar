@@ -42,11 +42,16 @@ export const subscribeToWines = (userId, onData, onError) => {
 };
 
 // Logbook entries
+// createdAt carries the date the work was actually done, which is not always
+// the date it gets typed in — a reading taken in the cellar in the morning is
+// often logged that evening. Callers may pass their own createdAt to backdate;
+// everything downstream (ordering, the chart, days-since, the PDF, the AI
+// prompt) reads this one field, so backdating stays consistent everywhere.
 export const addEntry = async (userId, wineId, entryData) => {
   const ref = collection(db, 'users', userId, 'wines', wineId, 'entries');
   return await addDoc(ref, {
     ...entryData,
-    createdAt: new Date().toISOString(),
+    createdAt: entryData.createdAt || new Date().toISOString(),
   });
 };
 

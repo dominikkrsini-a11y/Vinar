@@ -29,7 +29,7 @@ const Stack = createNativeStackNavigator();
 function TabIcon({ name, color }) {
   const icons = {
     Dashboard: '🍷', Calculator: '🧪',
-    Marketplace: '🛒', Assistant: '💬', Profile: '👤',
+    Assistant: '💬', Profile: '👤',
   };
   return <Text style={{ fontSize: 20, color }}>{icons[name]}</Text>;
 }
@@ -59,11 +59,6 @@ function MainTabs() {
         options={{
           tabBarLabel: language === 'hr' ? 'Kalkulator' : 'Calculator',
           tabBarIcon: ({ color }) => <TabIcon name="Calculator" color={color} />,
-        }} />
-      <Tab.Screen name="Marketplace" component={MarketplaceScreen}
-        options={{
-          tabBarLabel: language === 'hr' ? 'Tržnica' : 'Marketplace',
-          tabBarIcon: ({ color }) => <TabIcon name="Marketplace" color={color} />,
         }} />
       <Tab.Screen name="Assistant"   component={AssistantScreen}
         options={{
@@ -145,6 +140,9 @@ export default function AppNavigator() {
               <Stack.Screen name="AddEntry"   component={AddEntryScreen} />
               <Stack.Screen name="EditWine"   component={EditWineScreen} />
               <Stack.Screen name="Reference"  component={ReferenceScreen} />
+              {/* Useful, but not part of the cellar loop — reached from Profile so
+                  the tab bar stays on tracking wines and asking the assistant. */}
+              <Stack.Screen name="Marketplace" component={MarketplaceScreen} />
             </>
           ) : (
             <Stack.Screen name="Login" component={LoginScreen} />

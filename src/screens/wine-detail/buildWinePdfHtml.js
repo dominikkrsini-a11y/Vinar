@@ -7,24 +7,51 @@ const formatDateHr = (iso) => {
   });
 };
 
+// Notes and vessel names are free text, so they cannot go into the template raw.
+const cell = (value, suffix = '') => {
+  if (value === null || value === undefined || value === '') return '—';
+  return (
+    String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;') + suffix
+  );
+};
+
 export function buildWinePdfHtml({ wine, entries, language }) {
   const hr = language === 'hr';
 
   const fermEntries = (entries || []).filter((e) => e.type === 'fermentation');
   const sulfurEntries = (entries || []).filter((e) => e.type === 'sulfur');
+  const rackingEntries = (entries || []).filter((e) => e.type === 'racking');
+  const measurementEntries = (entries || []).filter((e) => e.type === 'measurement');
   const noteEntries = (entries || []).filter((e) => e.type === 'note');
+
+  const leesLabel = (value) => {
+    if (!value) return '—';
+    if (value === 'gross') return hr ? 'Grubi talog' : 'Gross lees';
+    if (value === 'fine') return hr ? 'Fini talog' : 'Fine lees';
+    return cell(value);
+  };
+
+  const methodLabel = (value) => {
+    if (!value) return '—';
+    if (value === 'gravity') return hr ? 'Gravitacijom' : 'Gravity';
+    if (value === 'pump') return hr ? 'Pumpom' : 'Pump';
+    return cell(value);
+  };
 
   const fermRows = fermEntries
     .map(
       (e) => `
       <tr>
         <td>${formatDateHr(e.createdAt)}</td>
-        <td>${e.temperature ? e.temperature + ' °C' : '—'}</td>
-        <td>${e.density ? e.density : '—'}</td>
-        <td>${e.sugar ? e.sugar + ' g/L' : '—'}</td>
-        <td>${e.ph ? e.ph : '—'}</td>
-        <td>${e.yeast ? e.yeast : '—'}</td>
-        <td>${e.notes ? e.notes : '—'}</td>
+        <td>${cell(e.temperature, ' °C')}</td>
+        <td>${cell(e.density)}</td>
+        <td>${cell(e.sugar, ' g/L')}</td>
+        <td>${cell(e.ph)}</td>
+        <td>${cell(e.yeast)}</td>
+        <td>${cell(e.notes)}</td>
       </tr>`
     )
     .join('');
@@ -34,11 +61,40 @@ export function buildWinePdfHtml({ wine, entries, language }) {
       (e) => `
       <tr>
         <td>${formatDateHr(e.createdAt)}</td>
-        <td>${e.amount ? e.amount + ' g/hL' : '—'}</td>
-        <td>${e.product ? e.product : '—'}</td>
-        <td>${e.freeSo2 ? e.freeSo2 + ' ppm' : '—'}</td>
-        <td>${e.ph ? e.ph : '—'}</td>
-        <td>${e.notes ? e.notes : '—'}</td>
+        <td>${cell(e.amount, ' g/hL')}</td>
+        <td>${cell(e.product)}</td>
+        <td>${cell(e.freeSo2, ' ppm')}</td>
+        <td>${cell(e.ph)}</td>
+        <td>${cell(e.notes)}</td>
+      </tr>`
+    )
+    .join('');
+
+  const rackingRows = rackingEntries
+    .map(
+      (e) => `
+      <tr>
+        <td>${formatDateHr(e.createdAt)}</td>
+        <td>${cell(e.volumeRacked, ' L')}</td>
+        <td>${cell(e.vesselTo)}</td>
+        <td>${leesLabel(e.lees)}</td>
+        <td>${methodLabel(e.method)}</td>
+        <td>${cell(e.notes)}</td>
+      </tr>`
+    )
+    .join('');
+
+  const measurementRows = measurementEntries
+    .map(
+      (e) => `
+      <tr>
+        <td>${formatDateHr(e.createdAt)}</td>
+        <td>${cell(e.ph)}</td>
+        <td>${cell(e.freeSo2, ' ppm')}</td>
+        <td>${cell(e.totalSo2, ' ppm')}</td>
+        <td>${cell(e.ta, ' g/L')}</td>
+        <td>${cell(e.temperature, ' °C')}</td>
+        <td>${cell(e.notes)}</td>
       </tr>`
     )
     .join('');
@@ -48,7 +104,7 @@ export function buildWinePdfHtml({ wine, entries, language }) {
       (e) => `
       <tr>
         <td>${formatDateHr(e.createdAt)}</td>
-        <td>${e.notes || '—'}</td>
+        <td>${cell(e.notes)}</td>
       </tr>`
     )
     .join('');
@@ -81,20 +137,20 @@ export function buildWinePdfHtml({ wine, entries, language }) {
     </head>
     <body>
 
-      <h1>${wine.name}</h1>
+      <h1>${cell(wine.name)}</h1>
       <p class="meta">
-        ${[wine.type, wine.grape, wine.vintage].filter(Boolean).join(' · ')}
-        ${wine.volume ? ' · ' + wine.volume + ' L' : ''}
+        ${[wine.type, wine.grape, wine.vintage].filter(Boolean).map((v) => cell(v)).join(' · ')}
+        ${wine.volume ? ' · ' + cell(wine.volume, ' L') : ''}
       </p>
       <p class="generated">
         ${hr ? 'Izvezeno' : 'Exported'}: ${new Date().toLocaleDateString('hr-HR')}
       </p>
 
       <!-- Fermentation -->
-      <h2>${hr ? 'Fermentacija' : 'Fermentation'}</h2>
+      <h2>${hr ? 'Vrenje' : 'Fermentation'}</h2>
       ${
         fermEntries.length === 0
-          ? `<p class="empty">${hr ? 'Nema unosa fermentacije.' : 'No fermentation entries.'}</p>`
+          ? `<p class="empty">${hr ? 'Nema unosa vrenja.' : 'No fermentation entries.'}</p>`
           : `<table>
             <thead><tr>
               <th>${hr ? 'Datum' : 'Date'}</th>
@@ -110,21 +166,60 @@ export function buildWinePdfHtml({ wine, entries, language }) {
       }
 
       <!-- Sulfur -->
-      <h2>${hr ? 'Sumpor (SO₂)' : 'Sulfur (SO₂)'}</h2>
+      <h2>${hr ? 'Sumporenje (SO₂)' : 'Sulfur (SO₂)'}</h2>
       ${
         sulfurEntries.length === 0
-          ? `<p class="empty">${hr ? 'Nema unosa sumpora.' : 'No sulfur entries.'}</p>`
+          ? `<p class="empty">${hr ? 'Nema unosa sumporenja.' : 'No sulfur entries.'}</p>`
           : `<table>
             <thead><tr>
               <th>${hr ? 'Datum' : 'Date'}</th>
               <th>${hr ? 'Količina' : 'Amount'}</th>
               <th>${hr ? 'Proizvod' : 'Product'}</th>
-              <th>${hr ? 'Slobodni SO₂' : 'Free SO₂'}</th>
+              <th>${hr ? 'Slobodni SO₂ prije' : 'Free SO₂ before'}</th>
               <th>pH</th>
               <th>${hr ? 'Bilješka' : 'Note'}</th>
             </tr></thead>
             <tbody>${sulfurRows}</tbody>
           </table>`
+      }
+
+      <!-- Racking -->
+      ${
+        rackingEntries.length > 0
+          ? `
+      <h2>${hr ? 'Pretoci' : 'Racking'}</h2>
+      <table>
+        <thead><tr>
+          <th>${hr ? 'Datum' : 'Date'}</th>
+          <th>${hr ? 'Pretočeno' : 'Volume'}</th>
+          <th>${hr ? 'U posudu' : 'Into vessel'}</th>
+          <th>${hr ? 'Talog' : 'Lees'}</th>
+          <th>${hr ? 'Način' : 'Method'}</th>
+          <th>${hr ? 'Bilješka' : 'Note'}</th>
+        </tr></thead>
+        <tbody>${rackingRows}</tbody>
+      </table>`
+          : ''
+      }
+
+      <!-- Measurements -->
+      ${
+        measurementEntries.length > 0
+          ? `
+      <h2>${hr ? 'Mjerenja' : 'Measurements'}</h2>
+      <table>
+        <thead><tr>
+          <th>${hr ? 'Datum' : 'Date'}</th>
+          <th>pH</th>
+          <th>${hr ? 'Slobodni SO₂' : 'Free SO₂'}</th>
+          <th>${hr ? 'Ukupni SO₂' : 'Total SO₂'}</th>
+          <th>${hr ? 'Kiselost' : 'TA'}</th>
+          <th>${hr ? 'Temp.' : 'Temp.'}</th>
+          <th>${hr ? 'Bilješka' : 'Note'}</th>
+        </tr></thead>
+        <tbody>${measurementRows}</tbody>
+      </table>`
+          : ''
       }
 
       <!-- Notes -->

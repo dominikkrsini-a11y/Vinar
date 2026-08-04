@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import {
   View, Text, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView,
@@ -6,11 +6,14 @@ import {
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { loginWithEmail, registerWithEmail } from '../firebase/auth';
+import { LanguageContext } from '../context/LanguageContext';
+import { t } from '../i18n/translations';
 import { TextField } from '../components/ui/TextField';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 
 export default function LoginScreen() {
+  const { language } = useContext(LanguageContext);
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [isLogin,  setIsLogin]  = useState(true);
@@ -24,7 +27,7 @@ export default function LoginScreen() {
 
   async function handleSubmit() {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+      Alert.alert(t(language, 'error'), t(language, 'credentialsRequired'));
       return;
     }
 
@@ -42,7 +45,7 @@ export default function LoginScreen() {
       // Only update state if still on screen
       if (isMounted.current) {
         setLoading(false);
-        Alert.alert('Error', error.message);
+        Alert.alert(t(language, 'error'), error.message);
       }
     }
   }
@@ -55,24 +58,25 @@ export default function LoginScreen() {
       <ScreenWrapper style={styles.inner}>
 
         <Text style={styles.logo}>🍷</Text>
-        <Text style={styles.title}>Vinar</Text>
-        <Text style={styles.subtitle}>Winemaker's Assistant</Text>
+        <Text style={styles.title}>{t(language, 'appName')}</Text>
+        <Text style={styles.subtitle}>{t(language, 'appSubtitle')}</Text>
 
         <View style={styles.form}>
           <TextField
-            label="Email"
+            label={t(language, 'email')}
             value={email}
             onChangeText={setEmail}
-            placeholder="your@email.com"
+            placeholder={t(language, 'emailPlaceholder')}
             keyboardType="email-address"
+            autoCapitalize="none"
             editable={!loading}
           />
 
           <TextField
-            label="Password"
+            label={t(language, 'password')}
             value={password}
             onChangeText={setPassword}
-            placeholder="password"
+            placeholder={t(language, 'passwordPlaceholder')}
             secureTextEntry
             editable={!loading}
           />
@@ -82,7 +86,7 @@ export default function LoginScreen() {
             onPress={handleSubmit}
             disabled={loading}
             loading={loading}
-            label={isLogin ? 'Sign In' : 'Create Account'}
+            label={isLogin ? t(language, 'signIn') : t(language, 'register')}
           />
 
           <TouchableOpacity
@@ -90,9 +94,7 @@ export default function LoginScreen() {
             onPress={() => setIsLogin(!isLogin)}
           >
             <Text style={styles.btnGhostText}>
-              {isLogin
-                ? "Don't have an account? Register"
-                : 'Already have an account? Sign In'}
+              {isLogin ? t(language, 'noAccount') : t(language, 'haveAccount')}
             </Text>
           </TouchableOpacity>
         </View>

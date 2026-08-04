@@ -1,6 +1,6 @@
 import { useState, useCallback, useContext } from 'react';
 import {
-  View, Text, ScrollView,
+  View, Text, ScrollView, TouchableOpacity,
   ActivityIndicator, Alert, Linking,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -28,7 +28,7 @@ const CATEGORY_LABEL_KEYS = {
   other: 'other',
 };
 
-export default function MarketplaceScreen() {
+export default function MarketplaceScreen({ navigation }) {
   const { language } = useContext(LanguageContext);
   const [activeTab,   setActiveTab]   = useState('listings');
   const [listings,    setListings]    = useState([]);
@@ -80,7 +80,12 @@ export default function MarketplaceScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🛒 {t(language, 'marketplace')}</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backText}>{t(language, 'back')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>🛒 {t(language, 'marketplace')}</Text>
+        </View>
         <Button title={t(language, 'postBtn')} onPress={() => setShowForm(true)} />
       </View>
 

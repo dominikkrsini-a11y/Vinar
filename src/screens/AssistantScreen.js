@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import {
-  View, Text, ActivityIndicator,
+  View, Text, ActivityIndicator, TouchableOpacity,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { colors } from '../theme/colors';
@@ -12,8 +12,14 @@ import { AssistantInputBar } from '../components/assistant/AssistantInputBar';
 import { PendingImagePreview } from '../components/assistant/PendingImagePreview';
 import { useAssistantOrchestrator } from '../components/assistant/useAssistantOrchestrator';
 
-export default function AssistantScreen() {
+export default function AssistantScreen({ route, navigation }) {
   const { language } = useContext(LanguageContext);
+
+  // Set by the Ask AI button on WineDetail. Derived straight from the route so
+  // pinning the same wine again always works, and dismissing clears the param.
+  const focusWine = route?.params?.wine ?? null;
+  const clearFocusWine = () => navigation.setParams({ wine: undefined });
+
   const {
     scrollRef,
     loadingCtx,
@@ -26,7 +32,7 @@ export default function AssistantScreen() {
     setPendingImage,
     handleCamera,
     sendMessage,
-  } = useAssistantOrchestrator({ language, t });
+  } = useAssistantOrchestrator({ language, t, focusWine });
 
   if (loadingCtx) {
     return (
@@ -56,8 +62,21 @@ export default function AssistantScreen() {
           messages={messages}
           loading={loading}
           profile={profile}
+          focusWine={focusWine}
           onSuggestionPress={(s) => setInput(s)}
         />
+
+        {/* Pinned wine */}
+        {focusWine ? (
+          <View style={styles.focusPill}>
+            <Text style={styles.focusPillText} numberOfLines={1}>
+              {t(language, 'askingAbout')}: {focusWine.name}
+            </Text>
+            <TouchableOpacity onPress={clearFocusWine} hitSlop={10}>
+              <Text style={styles.focusPillClear}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {/* Pending image preview */}
         <PendingImagePreview

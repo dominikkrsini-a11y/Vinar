@@ -34,6 +34,16 @@ export const assistantStyles = StyleSheet.create({
   bubbleTextAssistant:    { color: colors.textPrimary },
   chatImage:              { width: 220, height: 160, borderRadius: 12, marginBottom: 6 },
 
+  // Pinned wine
+  focusPill:              { flexDirection: 'row', alignItems: 'center',
+                            gap: 10, marginHorizontal: 12, marginBottom: 4,
+                            paddingHorizontal: 14, paddingVertical: 8,
+                            backgroundColor: colors.surfaceDeep,
+                            borderWidth: 1, borderColor: colors.gold,
+                            borderRadius: 16 },
+  focusPillText:          { flex: 1, fontSize: 13, color: colors.gold, fontWeight: '600' },
+  focusPillClear:         { fontSize: 14, color: colors.textMuted },
+
   // Pending image preview
   pendingImageContainer:  { margin: 12, position: 'relative', alignSelf: 'flex-end' },
   pendingImage:           { width: 80, height: 80, borderRadius: 8 },

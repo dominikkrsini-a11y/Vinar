@@ -91,8 +91,21 @@ export default function AddWineScreen({ navigation }) {
           value={vintage}
           onChangeText={setVintage}
           placeholder={t(language, 'vintagePlaceholder')}
+          keyboardType="number-pad"
           editable={!saving}
         />
+
+        {/* Volume is the only signal the assistant has for the size of the cellar,
+            so it sits with the other headline facts rather than at the bottom. */}
+        <TextField
+          label={t(language, 'wineVolume')}
+          value={volume}
+          onChangeText={setVolume}
+          placeholder={t(language, 'volumePlaceholder')}
+          keyboardType="decimal-pad"
+          editable={!saving}
+        />
+        <Text style={styles.hint}>{t(language, 'volumeHint')}</Text>
 
         <Text style={styles.label}>{t(language, 'wineType')} *</Text>
         <TouchableOpacity style={styles.input}
@@ -143,14 +156,6 @@ export default function AddWineScreen({ navigation }) {
           multiline
         />
 
-        <TextField
-          label="Volume (L)"
-          value={volume}
-          onChangeText={setVolume}
-          placeholder="e.g. 50"
-          editable={!saving}
-        />
-
         <PrimaryButton
           style={styles.button}
           onPress={handleSave}
@@ -172,6 +177,7 @@ const styles = StyleSheet.create({
   label:          { fontSize: 12, color: colors.textMuted,
                     textTransform: 'uppercase', letterSpacing: 1,
                     marginBottom: 6, marginTop: 16 },
+  hint:           { fontSize: 12, color: colors.textMuted, marginTop: 5 },
   input:          { backgroundColor: colors.surface, borderWidth: 1,
                     borderColor: colors.inputBorder, borderRadius: 8,
                     paddingHorizontal: 14, paddingVertical: 12,

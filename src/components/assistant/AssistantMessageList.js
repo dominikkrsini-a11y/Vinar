@@ -3,9 +3,11 @@ import { Chip } from '../ui/Chip';
 import { colors } from '../../theme/colors';
 
 function MessageBubble({ msg, isUser, styles }) {
-  const textContent = Array.isArray(msg.content)
+  // displayText is what the winemaker typed; msg.content may carry an added wine
+  // name that only the model needs to see.
+  const textContent = msg.displayText ?? (Array.isArray(msg.content)
     ? msg.content.find(c => c.type === 'text')?.text || ''
-    : msg.content;
+    : msg.content);
 
   return (
     <View style={[
@@ -38,8 +40,14 @@ export function AssistantMessageList({
   messages,
   loading,
   profile,
+  focusWine,
   onSuggestionPress,
 }) {
+  // With a wine pinned, the openers are about that wine instead of the whole cellar.
+  const suggestionKeys = focusWine
+    ? ['wineSuggestion1', 'wineSuggestion2', 'wineSuggestion3', 'wineSuggestion4']
+    : ['suggestion1', 'suggestion2', 'suggestion3', 'suggestion4'];
+
   return (
     <ScrollView
       ref={scrollRef}
@@ -49,19 +57,18 @@ export function AssistantMessageList({
       {messages.length === 0 && (
         <View style={styles.welcome}>
           <Text style={styles.welcomeTitle}>
-            {language === 'hr' ? 'Dobro došli' : 'Welcome'}
-            {profile?.firstName ? `, ${profile.firstName}` : ''}!
+            {focusWine
+              ? focusWine.name
+              : `${language === 'hr' ? 'Dobro došli' : 'Welcome'}${
+                  profile?.firstName ? `, ${profile.firstName}` : ''
+                }!`}
           </Text>
           <Text style={styles.welcomeText}>{t(language, 'welcomeMsg')}</Text>
           <View style={styles.suggestions}>
-            {[
-              t(language, 'suggestion1'),
-              t(language, 'suggestion2'),
-              t(language, 'suggestion3'),
-              t(language, 'suggestion4'),
-            ].map((s, i) => (
-              <Chip key={i} label={s} onPress={() => onSuggestionPress(s)} />
-            ))}
+            {suggestionKeys.map((key) => {
+              const label = t(language, key);
+              return <Chip key={key} label={label} onPress={() => onSuggestionPress(label)} />;
+            })}
           </View>
         </View>
       )}
