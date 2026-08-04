@@ -142,6 +142,12 @@ export function buildWinePdfHtml({ wine, entries, language }) {
         ${[wine.type, wine.grape, wine.vintage].filter(Boolean).map((v) => cell(v)).join(' · ')}
         ${wine.volume ? ' · ' + cell(wine.volume, ' L') : ''}
         ${wine.vessel ? ' · ' + cell(wine.vessel) : ''}
+        ${wine.harvestDate ? ' · ' + cell(wine.harvestDate.slice(0, 10)) : ''}
+        ${wine.brix ? ' · Brix ' + cell(wine.brix) : ''}
+        ${wine.babo ? ' · Babo ' + cell(wine.babo) : ''}
+        ${wine.mustPh ? ' · pH ' + cell(wine.mustPh) : ''}
+        ${wine.ta ? ' · TA ' + cell(wine.ta) : ''}
+        ${wine.yan ? ' · YAN ' + cell(wine.yan) : ''}
       </p>
       <p class="generated">
         ${hr ? 'Izvezeno' : 'Exported'}: ${new Date().toLocaleDateString('hr-HR')}

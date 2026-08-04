@@ -24,6 +24,7 @@ import {
 } from '../logbook/entrySchema';
 import { getWineStatus, STATUS_TONES } from '../utils/wineStatus';
 import { formatDaysAgo } from '../utils/dates';
+import { formatMustLine } from '../utils/wineMust';
 
 export default function WineDetailScreen({ route, navigation }) {
   const { wine } = route.params;
@@ -192,6 +193,9 @@ export default function WineDetailScreen({ route, navigation }) {
           {wine.volume ? `  ·  ${wine.volume} L` : ''}
           {wine.vessel ? `  ·  ${wine.vessel}` : ''}
         </Text>
+        {formatMustLine(wine, { language }) ? (
+          <Text style={styles.mustMeta}>{formatMustLine(wine, { language })}</Text>
+        ) : null}
 
         {loading ? null : (
           <View style={styles.statusRow}>
@@ -293,6 +297,7 @@ const styles = StyleSheet.create({
   editBtnText:       { color: colors.background, fontSize: 13, fontWeight: '600' },
   wineName:          { fontSize: 24, color: colors.textPrimary, fontWeight: '700' },
   wineMeta:          { fontSize: 13, color: colors.textMuted, marginTop: 4 },
+  mustMeta:          { fontSize: 12, color: colors.textMuted, marginTop: 6, lineHeight: 18 },
   statusRow:         { flexDirection: 'row', alignItems: 'center',
                        flexWrap: 'wrap', gap: 10, marginTop: 12 },
   statusBadge:       { borderWidth: 1, borderColor: colors.border,

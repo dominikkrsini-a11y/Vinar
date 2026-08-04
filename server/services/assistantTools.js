@@ -1,12 +1,13 @@
-// The two tools the model may call. Both are pure functions from wineMath.js —
-// no I/O, no Firestore, no network — so running one is cheap and cannot fail
-// in a way that affects the request.
+// The tools the model may call. All are pure functions — no I/O, no Firestore,
+// no network — so running one is cheap and cannot fail in a way that affects
+// the request.
 //
 // The user's own logbook figures are already computed into the system prompt by
 // promptBuilder.js. These tools exist for the other case: numbers the user
 // types in the conversation ("pH is 3.5, how much sulfur for 300 L?").
 
 import { computeFermentationStatus, computeSo2Advice } from './wineMath.js';
+import { computeYeastAdvice } from './yeastStrategy.js';
 
 export const assistantTools = [
   {
@@ -62,11 +63,47 @@ export const assistantTools = [
       required: ['readings'],
     },
   },
+  {
+    name: 'yeast_advice',
+    description:
+      'Recommend a yeast STRATEGY first (neutral/structural, aromatic, fresh commercial, or ' +
+      'stuck-ferment restart), then 1–2 example strains. Use for yeast questions. Pass situation ' +
+      '"stuck_restart" when fermentation is stuck. If style is unknown and the variety has no clear ' +
+      'playbook, the tool returns one clarifying question — ask that, do not invent a strain.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        grape: { type: 'string', description: 'Grape variety, e.g. Grk, Malvazija, Plavac Mali' },
+        wineType: { type: 'string', description: 'Wine type — white, red, rose, etc.' },
+        styleGoal: {
+          type: 'string',
+          enum: ['aromatic', 'neutral_structural', 'fresh_commercial'],
+          description: 'Style goal when known. Omit to use variety playbook or ask one question.',
+        },
+        potentialAlcohol: { type: 'number', description: 'Estimated potential alcohol % if known' },
+        brix: { type: 'number', description: 'Must Brix if known' },
+        babo: { type: 'number', description: 'Must Babo if known' },
+        tempControl: { type: 'boolean', description: 'True if the cellar has temperature control' },
+        yan: { type: 'number', description: 'YAN in mg/L N if known' },
+        situation: {
+          type: 'string',
+          enum: ['healthy_start', 'stuck_restart'],
+          description: 'healthy_start for normal pitching; stuck_restart for a stuck fermentation',
+        },
+        premium: {
+          type: 'boolean',
+          description: 'True when aiming for a premium/structural style (especially Grk)',
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 const HANDLERS = {
   so2_advice: computeSo2Advice,
   fermentation_status: computeFermentationStatus,
+  yeast_advice: computeYeastAdvice,
 };
 
 // Always returns a JSON string, never throws — a tool failure must come back to
