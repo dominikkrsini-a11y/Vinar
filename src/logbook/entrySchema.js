@@ -100,6 +100,16 @@ export function chipGroupsForType(type) {
   return CHIP_GROUPS_BY_TYPE[type] || [];
 }
 
+// Every field name that any entry type may store — used when editing so a type
+// change can clear keys that no longer belong (e.g. density after switching to note).
+export const ALL_ENTRY_FIELD_NAMES = [
+  ...new Set([
+    ...Object.values(FIELDS_BY_TYPE).flatMap((fields) => fields.map((f) => f.name)),
+    ...Object.values(CHIP_GROUPS_BY_TYPE).flatMap((groups) => groups.map((g) => g.name)),
+    'notes',
+  ]),
+];
+
 export function entryTypeLabelKey(type) {
   return ENTRY_TYPES.find((t) => t.key === type)?.labelKey || 'note';
 }

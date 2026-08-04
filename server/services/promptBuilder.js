@@ -7,6 +7,7 @@ import {
   isWhiteLike,
   toNumber,
 } from './wineMath.js';
+import { computeYeastAdvice } from './yeastStrategy.js';
 
 // Ported from src/services/assistant/prompt.js. The server now owns this
 // entirely — the client never sends profile/wine/entry data or a system
@@ -127,11 +128,28 @@ function densityTrendLine(entries) {
   return `  Density trend: ${values.join(' → ')} (last ${values.length})`;
 }
 
+function formatMustFacts(wine) {
+  const parts = [];
+  if (wine.harvestDate) {
+    const day = String(wine.harvestDate).slice(0, 10);
+    parts.push(`harvest: ${day}`);
+  }
+  if (wine.brix) parts.push(`Brix ${wine.brix}`);
+  if (wine.babo) parts.push(`Babo ${wine.babo}`);
+  if (wine.mustPh) parts.push(`must pH ${wine.mustPh}`);
+  if (wine.ta) parts.push(`TA ${wine.ta} g/L`);
+  if (wine.yan) parts.push(`YAN ${wine.yan}`);
+  return parts.length > 0 ? parts.join(', ') : '';
+}
+
 function formatWineBlock(wine, entries) {
   const wineEntries = (entries || []).slice(0, 5);
+  const must = formatMustFacts(wine);
   const header = `Wine: ${wine.name} (${wine.type || ''}, ${wine.grape || ''}, ${
     wine.vintage || ''
-  }${wine.volume ? `, ${wine.volume}L` : ''})`;
+  }${wine.volume ? `, ${wine.volume}L` : ''}${
+    wine.vessel ? `, vessel: ${wine.vessel}` : ''
+  }${must ? `, ${must}` : ''})`;
 
   if (wineEntries.length === 0) {
     return `${header}\nNo logbook entries yet.`;
@@ -186,9 +204,10 @@ function computeDerivedFacts(wines, entriesByWineId) {
     const label = wine.name || 'Wine';
     const ferm = entries.filter((e) => e.type === 'fermentation');
 
+    let fermentStatus = null;
     if (ferm.length > 0) {
       // Entries arrive newest-first from Firestore; wineMath expects oldest-first.
-      const status = computeFermentationStatus({
+      fermentStatus = computeFermentationStatus({
         wineType: wine.type,
         readings: [...ferm].reverse().map((e) => ({
           date: e.createdAt,
@@ -197,8 +216,8 @@ function computeDerivedFacts(wines, entriesByWineId) {
           sugar: e.sugar,
         })),
       });
-      if (status.ok) {
-        lines.push(`- ${label} — fermentation ${status.status.toUpperCase()}: ${status.summary}`);
+      if (fermentStatus.ok) {
+        lines.push(`- ${label} — fermentation ${fermentStatus.status.toUpperCase()}: ${fermentStatus.summary}`);
       }
     }
 
@@ -213,6 +232,24 @@ function computeDerivedFacts(wines, entriesByWineId) {
         volumeL: toNumber(wine.volume),
       });
       if (so2.ok) lines.push(`- ${label} — SO₂: ${so2.summary}`);
+    }
+
+    // When ferment is stuck, inject restart yeast context without waiting for a tool call.
+    if (
+      fermentStatus?.ok &&
+      (fermentStatus.status === 'stuck' || fermentStatus.status === 'not_started')
+    ) {
+      const yeast = computeYeastAdvice({
+        grape: wine.grape,
+        wineType: wine.type,
+        brix: wine.brix,
+        babo: wine.babo,
+        yan: wine.yan,
+        situation: 'stuck_restart',
+      });
+      if (yeast.ok) {
+        lines.push(`- ${label} — YEAST CONTEXT: treat as restart — ${yeast.summary}`);
+      }
     }
   }
 
@@ -241,20 +278,28 @@ function computeRiskFlags(wines, entriesByWineId) {
       (e) => e.type === 'fermentation' && densityAsGL(e.density) !== null
     );
     if (fermWithDensity.length >= 2) {
-      const newest = densityAsGL(fermWithDensity[0].density);
-      const oldest = densityAsGL(fermWithDensity[fermWithDensity.length - 1].density);
-      const drop = Math.abs(oldest - newest);
-      const latestSugar = toNumber(fermWithDensity[0].sugar);
-      const stillSweet =
-        (latestSugar !== null && latestSugar > 5) || (newest !== null && newest > 1000);
-
-      if (drop < 5 && stillSweet) {
+      // One source of truth with tools / derived facts — recent-window rate.
+      const status = computeFermentationStatus({
+        wineType: wine.type,
+        readings: [...fermWithDensity].reverse().map((e) => ({
+          date: e.createdAt,
+          density: e.density,
+          temperature: e.temperature,
+          sugar: e.sugar,
+        })),
+      });
+      if (
+        status.ok &&
+        (status.status === 'stuck' ||
+          status.status === 'slow' ||
+          status.status === 'not_started')
+      ) {
         const shown = [...fermWithDensity]
           .reverse()
           .map((e) => e.density)
           .join(' → ');
         risks.push(
-          `- ${label}: density flat ${shown} — possible stuck / slow fermentation`
+          `- ${label}: fermentation ${status.status} (${shown}) — ${status.summary}`
         );
       }
     }
@@ -339,9 +384,22 @@ Rules you must always follow:
   - Stay short: 2–5 sentences. A risk mention must not make the answer chatty.
 - CALCULATIONS:
   - Anything under ALREADY CALCULATED is done — quote those figures, never redo the arithmetic.
-  - You have two tools, so2_advice and fermentation_status. Use them only for numbers the user
-    types in the conversation that are not in their logbook (e.g. "pH is 3.5, how much for 300 L").
-  - Never invent an SO₂ dose or a fermentation verdict by hand when a tool or a calculated figure covers it.
+  - You have three tools: so2_advice, fermentation_status, and yeast_advice. Use them for numbers
+    or yeast decisions the user types in chat that are not already covered in ALREADY CALCULATED
+    (e.g. "pH is 3.5, how much for 300 L", "recommend a yeast for my Malvazija").
+  - Never invent an SO₂ dose, fermentation verdict, or yeast strategy by hand when a tool or a
+    calculated figure covers it.
+- YEAST:
+  - Prefer a yeast STRATEGY first (neutral/structural vs aromatic thiol/ester vs fresh commercial
+    vs high-alcohol restart), then give 1–2 example strains. Never claim one brand is the only correct choice.
+  - Use must/harvest fields from the wine header (Brix, Babo, must pH, TA, YAN, harvest) when present.
+  - For Grk and premium/structural whites: neutral/structural strategy — do NOT default to QA23 or
+    other loud aromatic thiol yeasts.
+  - For Graševina, Malvazija, Pošip, Plavac, Teran/Vranac: give practical variety options, not only Grk logic.
+  - If fermentation is stuck (or YEAST CONTEXT says restart): restart protocol path — not a normal
+    healthy-ferment aromatic pick.
+  - If yeast_advice returns ask, or style/conditions are missing and would change the strategy: ask
+    ONE short clarifying question (style or temperature control), never a questionnaire.
 - THINK ABOUT THE WHOLE PROCESS, NOT JUST THE QUESTION:
   - Work through fruit, equipment, chemistry, timing and the logbook numbers before answering.
     A cellar problem usually starts an earlier step than the one being asked about — if the real

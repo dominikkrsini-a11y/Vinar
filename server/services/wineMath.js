@@ -172,15 +172,28 @@ export function computeFermentationStatus({ readings, wineType } = {}) {
   const first = rows[0];
   const white = isWhiteLike(wineType);
 
+  // Rate is recent-window: last two dated density readings. First→last overall
+  // rate misses "dropped then flat" (e.g. 1080 → 1030 → 1028).
+  const withDensity = rows.filter((r) => r.density !== null);
   let ratePerDay = null;
   let daysObserved = null;
-  if (rows.length >= 2 && first.density !== null && latest.density !== null) {
-    if (first.day !== null && latest.day !== null) {
-      daysObserved = (latest.day - first.day) / DAY_MS;
+  let overallDrop = null;
+
+  if (withDensity.length >= 2) {
+    const prev = withDensity[withDensity.length - 2];
+    const last = withDensity[withDensity.length - 1];
+    const oldest = withDensity[0];
+    overallDrop = oldest.density - last.density;
+
+    if (prev.day !== null && last.day !== null) {
+      daysObserved = (last.day - prev.day) / DAY_MS;
     }
-    const drop = first.density - latest.density;
     if (daysObserved !== null && daysObserved > 0) {
-      ratePerDay = drop / daysObserved;
+      ratePerDay = (prev.density - last.density) / daysObserved;
+    } else if (daysObserved === null) {
+      // Undated pair — treat as one day so a near-flat pair still flags stuck.
+      daysObserved = 1;
+      ratePerDay = prev.density - last.density;
     }
   }
 
@@ -191,10 +204,13 @@ export function computeFermentationStatus({ readings, wineType } = {}) {
   let status;
   if ((density !== null && density <= 995) || (sugar !== null && sugar <= 2)) {
     status = 'finished';
-  } else if (rows.length < 2 || ratePerDay === null) {
+  } else if (withDensity.length < 2 || ratePerDay === null) {
     status = 'unknown';
   } else if (ratePerDay < 1 && stillSweet) {
-    status = density !== null && density > 1070 ? 'not_started' : 'stuck';
+    status =
+      overallDrop !== null && overallDrop < 5 && density !== null && density > 1070
+        ? 'not_started'
+        : 'stuck';
   } else if (ratePerDay < 5 && stillSweet) {
     status = 'slow';
   } else if (ratePerDay > 25) {

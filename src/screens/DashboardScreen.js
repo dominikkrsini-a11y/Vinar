@@ -60,11 +60,27 @@ export default function DashboardScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      getUserProfile(auth.currentUser.uid)
+      const uid = auth.currentUser.uid;
+      getUserProfile(uid)
         .then(setProfile)
         .catch((e) => reportError(e, { screen: 'Dashboard', action: 'loadProfile' }));
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
-    }, [])
+
+      // Reload entries on focus so badges refresh after AddEntry / WineDetail edits.
+      // Wines list stays live via subscribeToWines; entries need an explicit refetch.
+      if (wines.length > 0) {
+        Promise.all(wines.map((w) => getEntries(uid, w.id)))
+          .then((lists) => {
+            setEntriesByWine(
+              wines.reduce((acc, w, i) => {
+                acc[w.id] = lists[i];
+                return acc;
+              }, {})
+            );
+          })
+          .catch((e) => reportError(e, { screen: 'Dashboard', action: 'reloadEntries' }));
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- wines from subscription; reload on each focus
+    }, [wines])
   );
 
   const handleLogbook = () => {
@@ -163,7 +179,7 @@ export default function DashboardScreen({ navigation }) {
                 <View style={styles.wineLeft}>
                   <Text style={styles.wineName}>{wine.name}</Text>
                   <Text style={styles.wineMeta}>
-                    {[wine.type, wine.grape, wine.vintage].filter(Boolean).join(' · ')}
+                    {[wine.type, wine.grape, wine.vintage, wine.vessel].filter(Boolean).join(' · ')}
                   </Text>
                   <View style={styles.wineStatusRow}>
                     <Text style={[styles.wineStatus, tone && { color: tone }]}>

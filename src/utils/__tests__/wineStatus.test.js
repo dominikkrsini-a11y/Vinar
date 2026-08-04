@@ -43,6 +43,32 @@ describe('getWineStatus', () => {
     expect(status.tone).toBe('alert');
   });
 
+  test('flags started-then-stalled even when overall drop looks healthy', () => {
+    // 1080 → 1030 → 1028: overall drop is large, but the recent window is flat.
+    const status = getWineStatus(
+      red,
+      newestFirst(
+        { type: 'fermentation', density: '1028', sugar: '60', createdAt: daysAgo(0) },
+        { type: 'fermentation', density: '1030', sugar: '65', createdAt: daysAgo(4) },
+        { type: 'fermentation', density: '1080', sugar: '190', createdAt: daysAgo(8) }
+      )
+    );
+    expect(status.key).toBe('statusStuck');
+    expect(status.tone).toBe('alert');
+  });
+
+  test('flags slow fermentation when recent rate is under 5 g/L/day', () => {
+    const status = getWineStatus(
+      white,
+      newestFirst(
+        { type: 'fermentation', density: '1040', sugar: '90', createdAt: daysAgo(1) },
+        { type: 'fermentation', density: '1052', sugar: '110', createdAt: daysAgo(5) }
+      )
+    );
+    expect(status.key).toBe('statusSlow');
+    expect(status.tone).toBe('warn');
+  });
+
   test('separates a fermentation that never started from one that stalled', () => {
     const status = getWineStatus(
       white,
@@ -134,5 +160,16 @@ describe('getWineStatus', () => {
       )
     );
     expect(status.key).toBe('statusAging');
+  });
+
+  test('ignores a measurement without free SO2 when deciding SO2 is due', () => {
+    const status = getWineStatus(
+      red,
+      newestFirst(
+        { type: 'measurement', ph: '3.4', createdAt: daysAgo(5) },
+        { type: 'fermentation', density: '995', sugar: '1', createdAt: daysAgo(80) }
+      )
+    );
+    expect(status.key).toBe('statusSo2Due');
   });
 });

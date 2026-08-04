@@ -76,6 +76,13 @@ export const deleteEntry = async (userId, wineId, entryId) => {
   await deleteDoc(ref);
 };
 
+// Same offline-friendly fire-and-forget pattern as addEntry: the local cache
+// updates immediately; awaiting would hang the UI while offline.
+export const updateEntry = async (userId, wineId, entryId, entryData) => {
+  const ref = doc(db, 'users', userId, 'wines', wineId, 'entries', entryId);
+  await updateDoc(ref, entryData);
+};
+
 // Marketplace listings
 export const addListing = async (listingData) => {
   const ref = collection(db, 'listings');

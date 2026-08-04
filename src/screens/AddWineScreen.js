@@ -13,6 +13,7 @@ import { reportError } from '../utils/reportError';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { TextField } from '../components/ui/TextField';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { mustFieldsFromForm } from '../utils/wineMust';
 
 const WINE_TYPES = ['Red', 'White', 'Rosé', 'Orange', 'Sparkling', 'Dessert'];
 
@@ -30,6 +31,13 @@ export default function AddWineScreen({ navigation }) {
   const [grape,       setGrape]       = useState('');
   const [notes,       setNotes]       = useState('');
   const [volume,      setVolume]      = useState('');
+  const [vessel,      setVessel]      = useState('');
+  const [harvestDate, setHarvestDate] = useState('');
+  const [brix,        setBrix]        = useState('');
+  const [babo,        setBabo]        = useState('');
+  const [mustPh,      setMustPh]      = useState('');
+  const [ta,          setTa]          = useState('');
+  const [yan,         setYan]         = useState('');
   const [showTypes,   setShowTypes]   = useState(false);
   const [showGrapes,  setShowGrapes]  = useState(false);
   const [saving,      setSaving]      = useState(false);
@@ -52,6 +60,11 @@ export default function AddWineScreen({ navigation }) {
       Alert.alert(t(language, 'required'), t(language, 'typeRequired'));
       return;
     }
+    const must = mustFieldsFromForm({ harvestDate, brix, babo, mustPh, ta, yan });
+    if (!must.ok) {
+      Alert.alert(t(language, 'required'), t(language, 'harvestDateInvalid'));
+      return;
+    }
     setSaving(true);
     // Don't await — Firestore write promises don't resolve until the
     // backend acknowledges the write, which can take an unbounded amount
@@ -61,6 +74,8 @@ export default function AddWineScreen({ navigation }) {
     addWine(auth.currentUser.uid, {
       name: name.trim(), vintage: vintage.trim(),
       type, grape, notes: notes.trim(), volume: volume.trim(),
+      vessel: vessel.trim(),
+      ...must.fields,
     }).catch((e) => {
       reportError(e, { screen: 'AddWine', action: 'addWine' });
     });
@@ -106,6 +121,70 @@ export default function AddWineScreen({ navigation }) {
           editable={!saving}
         />
         <Text style={styles.hint}>{t(language, 'volumeHint')}</Text>
+
+        <TextField
+          label={t(language, 'wineVessel')}
+          value={vessel}
+          onChangeText={setVessel}
+          placeholder={t(language, 'wineVesselPlaceholder')}
+          editable={!saving}
+        />
+
+        <Text style={styles.sectionLabel}>{t(language, 'mustSection')}</Text>
+
+        <TextField
+          label={t(language, 'wineHarvestDate')}
+          value={harvestDate}
+          onChangeText={setHarvestDate}
+          placeholder={t(language, 'harvestDatePlaceholder')}
+          keyboardType="numbers-and-punctuation"
+          editable={!saving}
+        />
+
+        <TextField
+          label={t(language, 'wineBrix')}
+          value={brix}
+          onChangeText={setBrix}
+          placeholder={t(language, 'brixPlaceholder')}
+          keyboardType="decimal-pad"
+          editable={!saving}
+        />
+
+        <TextField
+          label={t(language, 'wineBabo')}
+          value={babo}
+          onChangeText={setBabo}
+          placeholder={t(language, 'baboPlaceholder')}
+          keyboardType="decimal-pad"
+          editable={!saving}
+        />
+
+        <TextField
+          label={t(language, 'wineMustPh')}
+          value={mustPh}
+          onChangeText={setMustPh}
+          placeholder={t(language, 'mustPhPlaceholder')}
+          keyboardType="decimal-pad"
+          editable={!saving}
+        />
+
+        <TextField
+          label={t(language, 'wineTA')}
+          value={ta}
+          onChangeText={setTa}
+          placeholder={t(language, 'taPlaceholder')}
+          keyboardType="decimal-pad"
+          editable={!saving}
+        />
+
+        <TextField
+          label={t(language, 'wineYAN')}
+          value={yan}
+          onChangeText={setYan}
+          placeholder={t(language, 'yanPlaceholder')}
+          keyboardType="decimal-pad"
+          editable={!saving}
+        />
 
         <Text style={styles.label}>{t(language, 'wineType')} *</Text>
         <TouchableOpacity style={styles.input}
@@ -178,6 +257,9 @@ const styles = StyleSheet.create({
                     textTransform: 'uppercase', letterSpacing: 1,
                     marginBottom: 6, marginTop: 16 },
   hint:           { fontSize: 12, color: colors.textMuted, marginTop: 5 },
+  sectionLabel:   { fontSize: 12, color: colors.gold,
+                    textTransform: 'uppercase', letterSpacing: 1,
+                    marginBottom: 4, marginTop: 28 },
   input:          { backgroundColor: colors.surface, borderWidth: 1,
                     borderColor: colors.inputBorder, borderRadius: 8,
                     paddingHorizontal: 14, paddingVertical: 12,

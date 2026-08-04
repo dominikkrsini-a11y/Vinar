@@ -238,8 +238,10 @@ BITTERNESS (the most important decision for high-quality Grk):
 FERMENTATION AND AGEING:
 - Ferment at 15–17°C. Below 14°C the wine develops banana and pear aromas that cover the character
   of the vineyard.
-- Use neutral yeast strains that give glycerol. Strongly aromatic strains add aromas
-  that do not suit this variety.
+- Use a neutral / structural yeast strategy that supports glycerol and texture.
+  Strongly aromatic thiol/ester strains (e.g. QA23-style defaults) do not suit premium Grk —
+  they add aromas that cover the vineyard character. Example neutral strains only, never one brand
+  as the only correct choice.
 - A slow fermentation of 3–4 weeks gives more body. Watch it though: low YAN, high phenolics
   and a low temperature together can stop the fermentation.
 - Ageing on the lees for 6–12 months is the most effective way to improve the wine.
@@ -585,10 +587,12 @@ SLOW OR NO START (nothing after 48–72h)
 - Never rehydrate yeast in cold water or pitch straight into a cold must
 
 STUCK FERMENTATION (density flat >48h, sugar still >5 g/L)
+- Treat as a RESTART path, not a normal healthy-ferment yeast choice.
 - Causes: high alcohol, temp spike >32°C, YAN exhausted, toxic medium-chain fatty acids
 - Fix: adjust to 20–25°C, rack to aerate, add yeast hulls 20–30 g/hL to bind toxins,
-  restart with an alcohol-tolerant yeast (EC-1118, Uvaferm 43) built up as a starter
-  and blended 1:1 with the stuck wine in steps until it takes
+  restart with an alcohol-tolerant yeast built up as a starter and blended 1:1 with the
+  stuck wine in steps until it takes. Example restart yeasts (not the only options):
+  EC-1118, Uvaferm 43. Do not switch to an aromatic premium-white strain for a restart.
 - Do NOT add DAP this late — the yeast can't use it and it feeds spoilage organisms
 - A stuck wine with no SO₂ and residual sugar is at high risk of VA — act within days
 
