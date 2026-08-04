@@ -30,6 +30,7 @@ export default function AddWineScreen({ navigation }) {
   const [grape,       setGrape]       = useState('');
   const [notes,       setNotes]       = useState('');
   const [volume,      setVolume]      = useState('');
+  const [vessel,      setVessel]      = useState('');
   const [showTypes,   setShowTypes]   = useState(false);
   const [showGrapes,  setShowGrapes]  = useState(false);
   const [saving,      setSaving]      = useState(false);
@@ -61,6 +62,7 @@ export default function AddWineScreen({ navigation }) {
     addWine(auth.currentUser.uid, {
       name: name.trim(), vintage: vintage.trim(),
       type, grape, notes: notes.trim(), volume: volume.trim(),
+      vessel: vessel.trim(),
     }).catch((e) => {
       reportError(e, { screen: 'AddWine', action: 'addWine' });
     });
@@ -106,6 +108,14 @@ export default function AddWineScreen({ navigation }) {
           editable={!saving}
         />
         <Text style={styles.hint}>{t(language, 'volumeHint')}</Text>
+
+        <TextField
+          label={t(language, 'wineVessel')}
+          value={vessel}
+          onChangeText={setVessel}
+          placeholder={t(language, 'wineVesselPlaceholder')}
+          editable={!saving}
+        />
 
         <Text style={styles.label}>{t(language, 'wineType')} *</Text>
         <TouchableOpacity style={styles.input}

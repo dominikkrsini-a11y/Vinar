@@ -141,6 +141,7 @@ export function buildWinePdfHtml({ wine, entries, language }) {
       <p class="meta">
         ${[wine.type, wine.grape, wine.vintage].filter(Boolean).map((v) => cell(v)).join(' · ')}
         ${wine.volume ? ' · ' + cell(wine.volume, ' L') : ''}
+        ${wine.vessel ? ' · ' + cell(wine.vessel) : ''}
       </p>
       <p class="generated">
         ${hr ? 'Izvezeno' : 'Exported'}: ${new Date().toLocaleDateString('hr-HR')}

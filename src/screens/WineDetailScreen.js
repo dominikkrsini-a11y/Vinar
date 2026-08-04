@@ -190,6 +190,7 @@ export default function WineDetailScreen({ route, navigation }) {
         <Text style={styles.wineMeta}>
           {[wine.type, wine.grape, wine.vintage].filter(Boolean).join(' · ')}
           {wine.volume ? `  ·  ${wine.volume} L` : ''}
+          {wine.vessel ? `  ·  ${wine.vessel}` : ''}
         </Text>
 
         {loading ? null : (
@@ -248,6 +249,7 @@ export default function WineDetailScreen({ route, navigation }) {
               <TouchableOpacity
                 key={entry.id}
                 style={styles.entryCard}
+                onPress={() => navigation.navigate('AddEntry', { wine, entry })}
                 onLongPress={() => handleDeleteEntry(entry)}
                 delayLongPress={400}>
                 <View style={styles.entryHeader}>

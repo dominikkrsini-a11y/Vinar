@@ -45,6 +45,8 @@ export const translations = {
     wineVolume:            'Volume (L)',
     volumePlaceholder:     'e.g. 500',
     volumeHint:            'Lets the assistant size its advice to your cellar.',
+    wineVessel:            'Tank / vessel',
+    wineVesselPlaceholder: 'e.g. Cisterna 1',
     notes:                 'Notes',
     notesPlaceholder:      'Any initial notes about this wine...',
     selectType:            'Select type...',
@@ -91,6 +93,8 @@ export const translations = {
 
     // Add Entry
     newEntry:              'New Entry',
+    editEntry:             'Edit Entry',
+    saveChanges:           'Save Changes',
     entryType:             'Entry type',
     entryDate:             'Date',
     today:                 'Today',
@@ -116,7 +120,7 @@ export const translations = {
     taPlaceholder:         'e.g. 6.5',
     volumeRacked:          'Volume racked (L)',
     vesselTo:              'Into vessel',
-    vesselPlaceholder:     'e.g. inox 500 L',
+    vesselPlaceholder:     'e.g. Bure 500 L',
     leesType:              'Off which lees',
     leesGross:             'Gross lees',
     leesFine:              'Fine lees',
@@ -334,6 +338,8 @@ export const translations = {
     wineVolume:            'Volumen (L)',
     volumePlaceholder:     'npr. 500',
     volumeHint:            'Da asistent zna prilagoditi savjet veličini vašeg podruma.',
+    wineVessel:            'Cisterna / posuda',
+    wineVesselPlaceholder: 'npr. Cisterna 1',
     notes:                 'Bilješke',
     notesPlaceholder:      'Početne bilješke o ovom vinu...',
     selectType:            'Odaberite vrstu...',
@@ -380,6 +386,8 @@ export const translations = {
 
     // Add Entry
     newEntry:              'Novi Unos',
+    editEntry:             'Uredi unos',
+    saveChanges:           'Spremi promjene',
     entryType:             'Vrsta unosa',
     entryDate:             'Datum',
     today:                 'Danas',
@@ -405,7 +413,7 @@ export const translations = {
     taPlaceholder:         'npr. 6,5',
     volumeRacked:          'Pretočeno (L)',
     vesselTo:              'U posudu',
-    vesselPlaceholder:     'npr. inox 500 L',
+    vesselPlaceholder:     'npr. Bure 500 L',
     leesType:              'S kojeg taloga',
     leesGross:             'Grubi talog',
     leesFine:              'Fini talog',

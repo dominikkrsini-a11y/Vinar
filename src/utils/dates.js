@@ -43,6 +43,16 @@ export function isoForDaysAgo(offset) {
   return d.toISOString();
 }
 
+// Formats an ISO timestamp for the manual date field (DD.MM.YYYY).
+export function formatTypedDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return '';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${day}.${month}.${d.getFullYear()}`;
+}
+
 // Accepts what a winemaker actually types: "14.9", "14.9.", "14.09.2025", and
 // also "14,9" or "14/9", because the numeric keypad offers a comma in Croatian
 // locales and a slash on some keyboards.

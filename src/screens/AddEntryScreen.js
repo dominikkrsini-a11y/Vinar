@@ -4,11 +4,12 @@ import {
   StyleSheet, ScrollView, Alert,
   KeyboardAvoidingView, Platform, Modal,
 } from 'react-native';
+import { deleteField } from 'firebase/firestore';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { addEntry, getEntries } from '../firebase/firestore';
+import { addEntry, getEntries, updateEntry } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
@@ -17,9 +18,11 @@ import { TextField } from '../components/ui/TextField';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { normalizeDecimal, toNumber } from '../utils/numbers';
 import {
-  daysSince, formatDayCount, formatDaysAgo, isoForDaysAgo, parseTypedDate,
+  daysSince, formatDayCount, formatDaysAgo, formatTypedDate,
+  isoForDaysAgo, parseTypedDate,
 } from '../utils/dates';
 import {
+  ALL_ENTRY_FIELD_NAMES,
   ENTRY_TYPES,
   chipGroupsForType,
   fieldLabel,
@@ -78,15 +81,37 @@ const REMEMBERED_FIELDS = ['yeast', 'product'];
 // no punctuation pad, and its decimal key is what parseTypedDate splits on.
 const DATE_KEYBOARD = Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'decimal-pad';
 
+function initialDateState(entry) {
+  if (!entry?.createdAt) return { dateChoice: 0, manualDate: '' };
+  const age = daysSince(entry.createdAt);
+  if (age === 0 || age === 1 || age === 2) {
+    return { dateChoice: age, manualDate: '' };
+  }
+  return { dateChoice: 'other', manualDate: formatTypedDate(entry.createdAt) };
+}
+
+function initialValuesFromEntry(entry) {
+  if (!entry) return {};
+  const next = {};
+  for (const name of ALL_ENTRY_FIELD_NAMES) {
+    if (name === 'notes') continue;
+    if (entry[name] !== undefined && entry[name] !== '') next[name] = String(entry[name]);
+  }
+  return next;
+}
+
 export default function AddEntryScreen({ route, navigation }) {
-  const { wine } = route.params;
+  const { wine, entry: existingEntry } = route.params;
+  const isEditing = Boolean(existingEntry?.id);
   const { language } = useContext(LanguageContext);
 
-  const [type,         setType]         = useState('fermentation');
-  const [values,       setValues]       = useState({});
-  const [notes,        setNotes]        = useState('');
-  const [dateChoice,   setDateChoice]   = useState(0);
-  const [manualDate,   setManualDate]   = useState('');
+  const initialDate = initialDateState(existingEntry);
+
+  const [type,         setType]         = useState(existingEntry?.type || 'fermentation');
+  const [values,       setValues]       = useState(() => initialValuesFromEntry(existingEntry));
+  const [notes,        setNotes]        = useState(existingEntry?.notes || '');
+  const [dateChoice,   setDateChoice]   = useState(initialDate.dateChoice);
+  const [manualDate,   setManualDate]   = useState(initialDate.manualDate);
   const [history,      setHistory]      = useState([]);
   const [saving,       setSaving]       = useState(false);
   const [showReminder, setShowReminder] = useState(false);
@@ -100,6 +125,7 @@ export default function AddEntryScreen({ route, navigation }) {
       .then((data) => {
         if (!active) return;
         setHistory(data);
+        if (isEditing) return;
         setValues((prev) => {
           const next = { ...prev };
           for (const field of REMEMBERED_FIELDS) {
@@ -122,9 +148,13 @@ export default function AddEntryScreen({ route, navigation }) {
 
   // The newest earlier entry that recorded this field, whatever its type — pH and
   // free SO₂ are logged from several types and the most recent one is what counts.
+  // When editing, skip this entry so the "last" hint is the previous real reading.
   const lastReadingFor = (field) => {
     if (!field.numeric) return null;
-    const previous = history.find((e) => e[field.name] !== undefined && e[field.name] !== '');
+    const previous = history.find((e) => {
+      if (isEditing && e.id === existingEntry.id) return false;
+      return e[field.name] !== undefined && e[field.name] !== '';
+    });
     if (!previous) return null;
     return { value: previous[field.name], days: daysSince(previous.createdAt) };
   };
@@ -136,15 +166,32 @@ export default function AddEntryScreen({ route, navigation }) {
 
   const collectEntryData = () => {
     const data = { type };
+    const kept = new Set(['type']);
+
     for (const field of fields) {
       const raw = values[field.name];
       if (raw === undefined || String(raw).trim() === '') continue;
       data[field.name] = field.numeric ? normalizeDecimal(raw) : String(raw).trim();
+      kept.add(field.name);
     }
     for (const group of chipGroups) {
-      if (values[group.name]) data[group.name] = values[group.name];
+      if (values[group.name]) {
+        data[group.name] = values[group.name];
+        kept.add(group.name);
+      }
     }
-    if (notes.trim()) data.notes = notes.trim();
+    if (notes.trim()) {
+      data.notes = notes.trim();
+      kept.add('notes');
+    }
+
+    // Type changes must not leave a stale density (etc.) on the document.
+    if (isEditing) {
+      for (const name of ALL_ENTRY_FIELD_NAMES) {
+        if (!kept.has(name)) data[name] = deleteField();
+      }
+    }
+
     return data;
   };
 
@@ -164,12 +211,20 @@ export default function AddEntryScreen({ route, navigation }) {
     // Don't await — write promises don't resolve until the backend
     // acknowledges the write, so awaiting would hang the UI indefinitely
     // while offline. The entry is written to the local cache immediately.
-    addEntry(auth.currentUser.uid, wine.id, entryData).catch((e) => {
-      reportError(e, { screen: 'AddEntry', action: 'saveEntry', type });
+    const write = isEditing
+      ? updateEntry(auth.currentUser.uid, wine.id, existingEntry.id, entryData)
+      : addEntry(auth.currentUser.uid, wine.id, entryData);
+
+    write.catch((e) => {
+      reportError(e, {
+        screen: 'AddEntry',
+        action: isEditing ? 'updateEntry' : 'saveEntry',
+        type,
+      });
     });
 
     setSaving(false);
-    if (type === 'sulfur') {
+    if (!isEditing && type === 'sulfur') {
       setShowReminder(true);
     } else {
       navigation.goBack();
@@ -184,7 +239,11 @@ export default function AddEntryScreen({ route, navigation }) {
     }
 
     const entryData = { ...collectEntryData(), createdAt };
-    const hasContent = Object.keys(entryData).some((k) => k !== 'type' && k !== 'createdAt');
+    const hasContent = Object.keys(entryData).some((k) => {
+      if (k === 'type' || k === 'createdAt') return false;
+      // deleteField sentinels are objects — they clear keys, they are not content.
+      return typeof entryData[k] !== 'object';
+    });
     if (!hasContent) {
       Alert.alert(t(language, 'emptyEntryTitle'), t(language, 'emptyEntryMsg'));
       return;
@@ -258,7 +317,9 @@ export default function AddEntryScreen({ route, navigation }) {
           <Text style={styles.backText}>← {wine.name}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>{t(language, 'newEntry')}</Text>
+        <Text style={styles.title}>
+          {t(language, isEditing ? 'editEntry' : 'newEntry')}
+        </Text>
 
         <Text style={styles.label}>{t(language, 'entryType')}</Text>
         <View style={styles.typeRow}>
@@ -363,7 +424,7 @@ export default function AddEntryScreen({ route, navigation }) {
           onPress={handleSave}
           disabled={saving}
           loading={saving}
-          label={t(language, 'saveEntry')}
+          label={t(language, isEditing ? 'saveChanges' : 'saveEntry')}
         />
 
         </ScreenWrapper>

@@ -131,7 +131,9 @@ function formatWineBlock(wine, entries) {
   const wineEntries = (entries || []).slice(0, 5);
   const header = `Wine: ${wine.name} (${wine.type || ''}, ${wine.grape || ''}, ${
     wine.vintage || ''
-  }${wine.volume ? `, ${wine.volume}L` : ''})`;
+  }${wine.volume ? `, ${wine.volume}L` : ''}${
+    wine.vessel ? `, vessel: ${wine.vessel}` : ''
+  })`;
 
   if (wineEntries.length === 0) {
     return `${header}\nNo logbook entries yet.`;
@@ -241,20 +243,28 @@ function computeRiskFlags(wines, entriesByWineId) {
       (e) => e.type === 'fermentation' && densityAsGL(e.density) !== null
     );
     if (fermWithDensity.length >= 2) {
-      const newest = densityAsGL(fermWithDensity[0].density);
-      const oldest = densityAsGL(fermWithDensity[fermWithDensity.length - 1].density);
-      const drop = Math.abs(oldest - newest);
-      const latestSugar = toNumber(fermWithDensity[0].sugar);
-      const stillSweet =
-        (latestSugar !== null && latestSugar > 5) || (newest !== null && newest > 1000);
-
-      if (drop < 5 && stillSweet) {
+      // One source of truth with tools / derived facts — recent-window rate.
+      const status = computeFermentationStatus({
+        wineType: wine.type,
+        readings: [...fermWithDensity].reverse().map((e) => ({
+          date: e.createdAt,
+          density: e.density,
+          temperature: e.temperature,
+          sugar: e.sugar,
+        })),
+      });
+      if (
+        status.ok &&
+        (status.status === 'stuck' ||
+          status.status === 'slow' ||
+          status.status === 'not_started')
+      ) {
         const shown = [...fermWithDensity]
           .reverse()
           .map((e) => e.density)
           .join(' → ');
         risks.push(
-          `- ${label}: density flat ${shown} — possible stuck / slow fermentation`
+          `- ${label}: fermentation ${status.status} (${shown}) — ${status.summary}`
         );
       }
     }
