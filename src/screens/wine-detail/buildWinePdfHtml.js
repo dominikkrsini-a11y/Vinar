@@ -237,9 +237,8 @@ export function buildWinePdfHtml({ wine, entries, language }) {
           : ''
       }
 
-      <div class="footer">Vinar App · ${wine.name} · ${new Date().getFullYear()}</div>
+      <div class="footer">Vinar App · ${cell(wine.name)} · ${new Date().getFullYear()}</div>
 
     </body>
     </html>`;
 }
-
