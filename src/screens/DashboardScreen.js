@@ -79,7 +79,6 @@ export default function DashboardScreen({ navigation }) {
           })
           .catch((e) => reportError(e, { screen: 'Dashboard', action: 'reloadEntries' }));
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- wines from subscription; reload on each focus
     }, [wines])
   );
 

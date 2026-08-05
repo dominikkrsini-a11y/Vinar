@@ -30,6 +30,7 @@ export function So2CalculatorTab({
   so2Result,
   onCalculate,
   onReset,
+  onSaveToLogbook,
 }) {
   return (
     <>
@@ -186,6 +187,14 @@ export function So2CalculatorTab({
           )}
           <View style={styles.divider} />
           <Text style={styles.warning}>{t(language, 'so2ResultWarning')}</Text>
+
+          {!so2Result.sufficient && onSaveToLogbook ? (
+            <TouchableOpacity style={styles.saveEntryBtn} onPress={onSaveToLogbook}>
+              <Text style={styles.saveEntryBtnText}>
+                📋 {t(language, 'saveAsSulfurEntry')}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       )}
     </>

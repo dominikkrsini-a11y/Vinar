@@ -157,6 +157,9 @@ PLAVAC MALI (red — Dalmatia, Pelješac, Hvar, Brač)
   traditional 20–30 days (robust, tannic "wall-of-flavor" style)
 - Aging: large Slavonian oak (500–2000 L), 12–24 months; small new barrels cover the fruit
 - Top Dingač/Postup ages 20+ years → leather, cedar, dried figs
+- COMMON MISTAKES: picking on sugar alone and ignoring pH; skipping the tartaric correction at
+  pH 3.7+; letting the peak run past 30°C with no cooling; adding DAP once the ferment is
+  already stalling instead of feeding early in two doses
 
 BABIĆ (red — Primošten, Šibenik karst)
 - Holds acidity better than Plavac Mali; naturally deep color and firm tannin
@@ -172,8 +175,21 @@ TERAN (red — Istria, Terra Rossa)
 - Reductive tendency: rack with aeration at the first sign of H₂S; do not leave long on gross lees
 - Low pH is an advantage: target molecular SO₂ is reached at a low dose (see SO₂ table)
 
+VRANAC (red — south Dalmatia, Montenegro border country)
+- Style goal: deep colour, firm tannin, dark fruit — structure without drying the mouth
+- Harvest: 23–25 Brix; ripens in heat, so check pH as well as sugar. pH often 3.6+ → correct with
+  tartaric at crush; at that pH the SO₂ dose from the table roughly doubles and Brett risk rises
+- Ferment 24–27°C; keep the peak below 30°C or the ferment stalls with sugar still left
+- Yeast strategy: clean alcohol-tolerant red strain when potential alcohol is 14.5%+, nutrients
+  in two doses. No aromatic white-style strains
+- Maceration 7–12 days is enough; the tannin is already firm
+- COMMON MISTAKE: over-extraction — long maceration plus hard pressing gives a hard, drying wine
+
 MALVAZIJA ISTARSKA (white — Istria)
-- Harvest: 20–22.5 Brix for the fresh style, TA 6–7 g/L; thin-skinned and oxidation-prone
+- Decide the style before harvest — fresh, aged on lees, or amber. It changes picking date,
+  yeast and SO₂ handling
+- Harvest: 20–22.5 Brix for the fresh style, TA 6–7 g/L, pH 3.2–3.4; thin-skinned and
+  oxidation-prone. For the aged or amber style pick a few days later, but not past TA 5.5 g/L
 - Protect from O₂ before fermentation: 30–40 mg/L SO₂ at crush, dry ice or inert gas on the must
 - Settle juice cold (10–12°C, 12–24h) before racking to ferment
 - Three styles:
@@ -182,6 +198,14 @@ MALVAZIJA ISTARSKA (white — Istria)
   3. Orange/Amber: extended skin contact (weeks to months) in open vats or qvevri (clay amphorae)
      → white wine acidity + red wine structure; thick skins make stable low-sulfur wine possible
 - Short 12–48h skin contact is a middle path for texture without going full amber
+- Yeast strategy: aromatic thiol/ester strain for the fresh style; a more neutral strain for the
+  aged and amber styles, where texture and lees do the work
+- SO₂ discipline matters more here than on a thick-skinned white: keep free SO₂ at the molecular
+  target for its pH from the first racking, and keep vessels topped up — ullage browns it fast
+- Block MLF for the fresh style; it costs the acidity that carries the aroma
+- COMMON MISTAKES: settling warm; pressing hard for extra juice (phenolic bitterness);
+  fermenting above 18°C in the fresh style and losing the aromatics; long skin contact on
+  low-acid fruit, which gives a flat amber wine
 
 POŠIP (white — Korčula, Pelješac, wider Dalmatia)
 - Harvest: 21–23 Brix, keep TA ≥5.5 g/L. Acid collapses fast in the last week
@@ -192,73 +216,51 @@ POŠIP (white — Korčula, Pelješac, wider Dalmatia)
 - Handles a small share of large-barrel aging (20–30% of blend) without losing varietal character
 
 GRK (white — Lumbarda, Korčula)
-Grk is a structural white wine, not an aromatic one. Its quality comes from texture and extract.
-- The flowers are functionally female and produce no viable pollen, so Grk needs another variety
-  planted among the vines to pollinate it, traditionally Plavac Mali, about 10–15% of the vines and
-  within a few rows. A block planted only with Grk produces almost no fruit.
-- Poor fruit set is normal. Berries differ in size and yields vary a lot between years.
-  Sort the fruit, or pick in two passes.
-- The deep sand at Lumbarda has no phylloxera, so the vines are usually ungrafted. The sand gives
-  low vigour and little disease, but it is poor in nitrogen: must YAN is often below 150 mg/L.
-  Measure it and add organic nitrogen in two doses to reach about 200–250 mg/L.
-- Yield controls quality more than anything else in the vineyard. For top quality keep it at
-  1.5–2.5 kg per vine, 35–45 hL/ha. Above that the wine loses concentration and becomes ordinary.
-
-HARVEST (acidity matters more than sugar):
-- Pick at 21.5–23 Brix, total acidity 6–7 g/L, pH 3.15–3.30. Do not wait for 24 Brix or more.
-  Above about 14% alcohol the wine loses freshness and the bitterness becomes harsh.
-- Malic acid drops quickly in the last 10 days of Dalmatian heat. Take a sample every 2 days
-  once the fruit reaches 21 Brix.
-- Measure pH, not only total acidity. Potassium from the sand raises pH while the total acidity
-  still looks good.
-- Pick at night or early morning and bring the fruit to the press below 15°C.
-
-BEFORE FERMENTATION AND DURING PRESSING (this stage decides the quality):
-- Skin contact is optional. Use it on purpose, not out of habit: 2–6 hours cold at 8–10°C, or none.
-  Warmer maceration longer than about 12 hours extracts harsh phenolics that dry the mouth,
-  and no fining will remove them afterwards.
-- Destem or press whole clusters — decide each vintage, do not default to either. Whole clusters
-  drain faster and let you press at lower pressure, but green or damaged stems add bitterness and
-  raise pH, and Grk is already firm and slightly bitter. If the stems are not fully brown and ripe,
-  destem. If you do press whole clusters, keep the pressure low and cut the fractions early.
-- The free run juice and the light pressing up to 0.6–0.8 bar are the best quality.
-  Stop pressing at 1.0–1.2 bar. Everything pressed after that carries harsh phenolics,
-  more potassium and higher pH.
-- Keep the pressings separate and taste them before blending. Aim for 55–60% juice, not 70% or more.
-- Settle the juice cold to 80–150 NTU. Cleaner juice than that ferments slowly and gives a thin wine.
-
-BITTERNESS (the most important decision for high-quality Grk):
-- A firm, slightly bitter finish is normal for Grk and part of its character.
-  Soften it with lees ageing and time. Do not try to remove it by fining.
-- What helps: careful pressing, ageing on the lees, time, and PVPP 5–15 g/hL if it is really needed.
-  Always test the dose on a small sample of the wine before treating the whole batch.
-- What ruins the wine: too much bentonite, casein or gelatin. They leave a wine with no character.
-  Once Grk has been over-fined, the character cannot be brought back.
-
-FERMENTATION AND AGEING:
-- Ferment at 15–17°C. Below 14°C the wine develops banana and pear aromas that cover the character
-  of the vineyard.
-- Use a neutral / structural yeast strategy that supports glycerol and texture.
-  Strongly aromatic thiol/ester strains (e.g. QA23-style defaults) do not suit premium Grk —
-  they add aromas that cover the vineyard character. Example neutral strains only, never one brand
-  as the only correct choice.
-- A slow fermentation of 3–4 weeks gives more body. Watch it though: low YAN, high phenolics
-  and a low temperature together can stop the fermentation.
-- Ageing on the lees for 6–12 months is the most effective way to improve the wine.
-  Stir the lees gently and not often (every 2–3 weeks at first, then once a month).
-  Too much stirring reduces freshness and makes the wine heavy.
-- Age in large neutral barrels (500–2500 L), concrete or amphora. New barrique covers
-  the salty, mineral character that makes Grk special.
-- The best wines need 2–3 years in the bottle before the phenolics soften, and can age 10 years or more.
-
-COMMON MISTAKES: picking by sugar alone; pressing too hard to get more juice; removing the bitterness
-by fining; and treating Grk like Pošip (aromatic, bottled early), which wastes its structure.
+Structural white, not an aromatic one — quality comes from texture and extract.
+- Functionally female flowers: it needs a pollinator planted among the vines, traditionally
+  Plavac Mali at 10–15% within a few rows. A block of Grk alone sets almost no fruit
+- Poor, uneven fruit set is normal — sort, or pick in two passes
+- The deep Lumbarda sand is ungrafted and low in nitrogen: YAN is often below 150 mg/L.
+  Measure it and feed organic nitrogen in two doses to about 200–250 mg/L
+- Yield decides quality: 1.5–2.5 kg per vine, 35–45 hL/ha for the top wines
+- Harvest on acidity, not sugar: 21.5–23 Brix, TA 6–7 g/L, pH 3.15–3.30. Past ~14% alcohol it
+  loses freshness and the bitterness turns harsh. Malic drops fast in the last 10 days of heat —
+  sample every 2 days from 21 Brix, and track pH (sand potassium raises it while TA still looks fine)
+- Pick at night or early morning, fruit to the press below 15°C
+- Pressing decides the wine: skin contact only on purpose (2–6h cold at 8–10°C, or none) —
+  warm maceration past ~12h gives harsh phenolics no fining will remove. Destem unless the stems
+  are fully brown and ripe. Free run plus light pressing to 0.6–0.8 bar is the best juice; stop at
+  1.0–1.2 bar; keep fractions separate and taste before blending; aim 55–60% juice
+- Settle cold to 80–150 NTU — cleaner than that ferments slowly and gives a thin wine
+- Bitterness: a firm, slightly bitter finish is correct. Soften it with lees and time, not fining.
+  PVPP 5–15 g/hL only if truly needed, bench-tested first. Heavy bentonite, casein or gelatin
+  strip the character permanently
+- Ferment 15–17°C (below 14°C brings banana/pear that covers the vineyard). Neutral / structural
+  yeast strategy that supports glycerol and texture; loud thiol/ester strains (QA23-style defaults)
+  do not suit premium Grk. Examples only, never one brand as the only correct choice
+- A slow 3–4 week ferment gives body, but low YAN plus phenolics plus low temperature can stall it
+- Lees ageing 6–12 months is the biggest improvement; stir gently every 2–3 weeks, then monthly.
+  Age in large neutral wood (500–2500 L), concrete or amphora — new barrique covers the salty,
+  mineral character. Best wines need 2–3 years in bottle and can hold 10+
+- COMMON MISTAKES: picking by sugar alone; pressing too hard for more juice; fining out the
+  bitterness; treating it like Pošip (aromatic, bottled early), which wastes its structure
 
 GRAŠEVINA (white — Slavonia)
-- Neutral-to-floral, high yielding, very adaptable
-- Harvest: 19–21 Brix for dry style, TA 6.5–8 g/L; can be picked late for sweet styles
+- Neutral-to-floral, high yielding, very adaptable. Style goal is clean fruit and acidity,
+  not weight — a dry, fresh wine bottled young, or a late-harvest sweet style
+- Harvest: 19–21 Brix for dry style, TA 6.5–8 g/L, pH 3.1–3.3; can be picked late for sweet styles
+- Yield is the quality dial: it crops heavily and dilutes. Thin to keep flavour and acidity,
+  or accept a simple wine
 - Ferment 14–17°C, stainless steel, bottle early
+- Yeast strategy: clean fresh/aromatic white strain, cool ferment. No structural or high-extract
+  programme — there is nothing for it to carry
+- Block MLF for the dry style; the acidity is the wine's backbone
+- pH is usually friendly, so the SO₂ dose from the table is modest — but check TA and free SO₂
+  before bottling, because a low-alcohol fresh white shows oxidation quickly
 - Its strength is clean fruit and acidity — heavy lees or oak work usually costs more than it adds
+- COMMON MISTAKES: picking late chasing sugar and losing the acidity that defines it; oak or heavy
+  lees work on a fruit-driven wine; bottling with too little free SO₂; carrying a big crop and
+  then trying to fix the thin result in the cellar
 
 ═══════════════════════════════════════════════════════
 EQUIPMENT REALITY — WHAT THE GEAR DECIDES
