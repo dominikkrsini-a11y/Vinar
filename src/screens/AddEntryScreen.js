@@ -101,15 +101,22 @@ function initialValuesFromEntry(entry) {
 }
 
 export default function AddEntryScreen({ route, navigation }) {
-  const { wine, entry: existingEntry } = route.params;
+  // `prefill` lets another screen (the SO₂ calculator) open this form with values
+  // already filled in. Nothing is written until the winemaker taps save.
+  const { wine, entry: existingEntry, prefill } = route.params;
   const isEditing = Boolean(existingEntry?.id);
   const { language } = useContext(LanguageContext);
 
   const initialDate = initialDateState(existingEntry);
 
-  const [type,         setType]         = useState(existingEntry?.type || 'fermentation');
-  const [values,       setValues]       = useState(() => initialValuesFromEntry(existingEntry));
-  const [notes,        setNotes]        = useState(existingEntry?.notes || '');
+  const [type,         setType]         = useState(
+    existingEntry?.type || prefill?.type || 'fermentation'
+  );
+  const [values,       setValues]       = useState(() => ({
+    ...initialValuesFromEntry(existingEntry),
+    ...(existingEntry ? {} : prefill?.values || {}),
+  }));
+  const [notes,        setNotes]        = useState(existingEntry?.notes || prefill?.notes || '');
   const [dateChoice,   setDateChoice]   = useState(initialDate.dateChoice);
   const [manualDate,   setManualDate]   = useState(initialDate.manualDate);
   const [history,      setHistory]      = useState([]);

@@ -1,12 +1,16 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import {
-  Text, TouchableOpacity,
+  View, Text, TouchableOpacity, Alert, Modal,
   StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { colors } from '../theme/colors';
+import { auth } from '../firebase/config';
+import { subscribeToWines } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { calculateABV, calculateSO2Addition, correctSG, getTargetFreeSO2 } from '../features/calculator/helpers';
+import { buildSulfurPrefill } from '../features/calculator/so2Entry';
+import { reportError } from '../utils/reportError';
 import { toNumber } from '../utils/numbers';
 import { TabSwitcher } from '../features/calculator/components/TabSwitcher';
 import { CalcCard } from '../features/calculator/components/CalcCard';
@@ -37,6 +41,20 @@ export default function CalculatorScreen({ navigation }) {
   const [tabletMg,   setTabletMg]  = useState('440');
   const [so2Result,  setSo2Result]  = useState(null);
   const [so2Error,   setSo2Error]   = useState('');
+
+  // Wines are only needed to save a result into a logbook. Same live source as
+  // the dashboard, so the list is there offline too.
+  const [wines,          setWines]          = useState([]);
+  const [showWinePicker, setShowWinePicker] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToWines(
+      auth.currentUser.uid,
+      setWines,
+      (e) => reportError(e, { screen: 'Calculator', action: 'subscribeToWines' })
+    );
+    return unsubscribe;
+  }, []);
 
   const WINE_TYPES_SO2 = [
     { key: 'white', label: t(language, 'white') },
@@ -115,9 +133,67 @@ export default function CalculatorScreen({ navigation }) {
     setSo2Result(result);
   };
 
+  // ─── SO2 → LOGBOOK ─────────────────────────────────────────────────────
+  // Opens the normal entry form with the calculated values filled in. The
+  // winemaker confirms and saves there; nothing is written from here.
+  const openSulfurEntry = (wine) => {
+    const prefill = buildSulfurPrefill({
+      so2Result,
+      productLabel: PRODUCTS.find(p => p.key === product)?.label,
+      ph: pH,
+      volume,
+      language,
+    });
+    if (!prefill) return;
+    navigation.navigate('AddEntry', { wine, prefill });
+  };
+
+  const handleSaveToLogbook = () => {
+    if (wines.length === 0) {
+      Alert.alert(t(language, 'noWinesTitle'), t(language, 'noWinesYet'));
+      return;
+    }
+    if (wines.length === 1) {
+      openSulfurEntry(wines[0]);
+      return;
+    }
+    setShowWinePicker(true);
+  };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+
+      <Modal visible={showWinePicker} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowWinePicker(false)}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>{t(language, 'selectWine')}</Text>
+            {wines.map(w => (
+              <TouchableOpacity
+                key={w.id}
+                style={styles.modalItem}
+                onPress={() => {
+                  setShowWinePicker(false);
+                  openSulfurEntry(w);
+                }}>
+                <Text style={styles.modalItemText}>{w.name}</Text>
+                <Text style={styles.modalItemMeta}>
+                  {[w.type, w.grape, w.vintage, w.vessel].filter(Boolean).join(' · ')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => setShowWinePicker(false)}>
+              <Text style={styles.modalCancelText}>{t(language, 'cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <ScrollView style={styles.container} contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled">
 
@@ -184,6 +260,7 @@ export default function CalculatorScreen({ navigation }) {
               setTabletMg={setTabletMg}
               so2Error={so2Error}
               so2Result={so2Result}
+              onSaveToLogbook={handleSaveToLogbook}
               onCalculate={handleSO2}
               onReset={() => {
                 setPH(''); setCurrentSO2('');
@@ -278,4 +355,22 @@ const styles = StyleSheet.create({
   comingSoonTitle:     { fontSize: 12, color: colors.textMuted,
                          textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
   comingSoonItem:      { fontSize: 14, color: colors.textMuted, marginBottom: 8 },
+  saveEntryBtn:        { marginTop: 16, borderRadius: 8, borderWidth: 1,
+                         borderColor: colors.gold, paddingVertical: 12,
+                         alignItems: 'center' },
+  saveEntryBtnText:    { color: colors.gold, fontWeight: '700', fontSize: 15 },
+  modalOverlay:        { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
+                         justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalBox:            { backgroundColor: colors.surface, borderRadius: 14,
+                         width: '100%', borderWidth: 1, borderColor: colors.border,
+                         overflow: 'hidden' },
+  modalTitle:          { fontSize: 13, color: colors.textMuted,
+                         textTransform: 'uppercase', letterSpacing: 1, padding: 16,
+                         borderBottomWidth: 1, borderBottomColor: colors.border },
+  modalItem:           { paddingHorizontal: 16, paddingVertical: 14,
+                         borderBottomWidth: 1, borderBottomColor: colors.border },
+  modalItemText:       { fontSize: 16, color: colors.textPrimary, fontWeight: '600' },
+  modalItemMeta:       { fontSize: 12, color: colors.textMuted, marginTop: 3 },
+  modalCancel:         { padding: 16, alignItems: 'center' },
+  modalCancelText:     { fontSize: 15, color: colors.textMuted },
 });
