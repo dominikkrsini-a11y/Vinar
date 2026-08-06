@@ -2,12 +2,13 @@ rules_version = '2';
 
 // Vinar — Firestore security rules
 //
-// Data model (see src/firebase/firestore.js):
+// Data model (see src/firebase/firestore.js + src/firebase/feedback.js):
 //   users/{userId}                        — profile fields (owner-only)
 //   users/{userId}/wines/{wineId}          — wine records (owner-only)
 //   users/{userId}/wines/{wineId}/entries/{entryId} — logbook entries (owner-only)
 //   listings/{listingId}                   — marketplace listings (global collection,
 //                                             authenticated read, owner-only write)
+//   feedback/{feedbackId}                  — beta micro-survey answers (owner create/read)
 //
 // Principle: client-side ownership checks (e.g. `listing.userId !== auth.currentUser.uid`
 // in MarketplaceScreen.js) are NOT security — these rules are the actual enforcement.
@@ -50,6 +51,15 @@ service cloud.firestore {
       // Only the original poster can edit or delete their listing.
       allow update, delete: if isSignedIn()
                              && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Beta micro-survey feedback (global collection) ──────────────────
+    match /feedback/{feedbackId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn()
+                  && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     // Deny everything else by default.
