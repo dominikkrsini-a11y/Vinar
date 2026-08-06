@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { auth } from '../../firebase/config';
 import { getUserProfile } from '../../firebase/firestore';
+import {
+  FEEDBACK_TYPES,
+  hasAskedFeedback,
+  markFeedbackAsked,
+  submitFeedback,
+} from '../../firebase/feedback';
 import { getAssistantBaseUrl, sendAssistantMessage } from '../../services/assistant/client';
 import { reportError } from '../../utils/reportError';
 import { buildUserContent } from './buildUserContent';
@@ -14,8 +20,12 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
   const [loadingCtx, setLoadingCtx] = useState(true);
   const [profile, setProfile] = useState(null);
   const [pendingImage, setPendingImage] = useState(null);
+  const [showAssistantSurvey, setShowAssistantSurvey] = useState(false);
 
   const scrollRef = useRef(null);
+  // Session-local gate so a second successful reply in the same session cannot
+  // re-open the survey before the profile write lands.
+  const assistantSurveyAskedRef = useRef(false);
   const assistantBaseUrl = getAssistantBaseUrl();
 
   useEffect(() => {
@@ -28,6 +38,8 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
         const uid = auth.currentUser.uid;
         const profileData = await getUserProfile(uid);
         setProfile(profileData);
+        const asked = await hasAskedFeedback(uid, FEEDBACK_TYPES.ASSISTANT_USEFUL);
+        assistantSurveyAskedRef.current = asked;
       } catch (e) {
         reportError(e, { screen: 'Assistant', action: 'loadContext' });
         Alert.alert(
@@ -89,6 +101,12 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
         role: 'assistant',
         content: [{ type: 'text', text: data.content[0].text }],
       }]);
+
+      // First successful reply only — error bubbles in catch must not trigger this.
+      if (!assistantSurveyAskedRef.current) {
+        assistantSurveyAskedRef.current = true;
+        setShowAssistantSurvey(true);
+      }
     } catch (e) {
       setMessages((prev) => [...prev, {
         role: 'assistant',
@@ -107,6 +125,28 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
     }
   };
 
+  const onAssistantSurveySubmit = ({ choice, comment }) => {
+    setShowAssistantSurvey(false);
+    const uid = auth.currentUser?.uid;
+    if (!uid || !choice) {
+      markFeedbackAsked(uid, FEEDBACK_TYPES.ASSISTANT_USEFUL);
+      return;
+    }
+    submitFeedback({
+      userId: uid,
+      type: FEEDBACK_TYPES.ASSISTANT_USEFUL,
+      choice,
+      comment,
+      context: 'assistant',
+    });
+  };
+
+  const onAssistantSurveyDismiss = () => {
+    setShowAssistantSurvey(false);
+    assistantSurveyAskedRef.current = true;
+    markFeedbackAsked(auth.currentUser?.uid, FEEDBACK_TYPES.ASSISTANT_USEFUL);
+  };
+
   return {
     scrollRef,
     loadingCtx,
@@ -119,5 +159,8 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
     setPendingImage,
     handleCamera,
     sendMessage,
+    showAssistantSurvey,
+    onAssistantSurveySubmit,
+    onAssistantSurveyDismiss,
   };
 }

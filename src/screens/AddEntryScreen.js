@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity,
   StyleSheet, ScrollView, Alert,
@@ -9,13 +9,21 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { addEntry, getEntries, updateEntry } from '../firebase/firestore';
+import { addEntry, getEntries, getWines, updateEntry } from '../firebase/firestore';
+import {
+  FEEDBACK_TYPES,
+  buildLogbookFeedbackComment,
+  hasAskedFeedback,
+  markFeedbackAsked,
+  submitFeedback,
+} from '../firebase/feedback';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { TextField } from '../components/ui/TextField';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { FeedbackSurveyModal } from '../components/feedback/FeedbackSurveyModal';
 import { normalizeDecimal, toNumber } from '../utils/numbers';
 import {
   daysSince, formatDayCount, formatDaysAgo, formatTypedDate,
@@ -122,6 +130,20 @@ export default function AddEntryScreen({ route, navigation }) {
   const [history,      setHistory]      = useState([]);
   const [saving,       setSaving]       = useState(false);
   const [showReminder, setShowReminder] = useState(false);
+  const [showLogbookSurvey, setShowLogbookSurvey] = useState(false);
+  const [pendingLogbookSurvey, setPendingLogbookSurvey] = useState(false);
+
+  const logbookSurveyChoices = useMemo(() => ([
+    { value: 'yes', label: t(language, 'feedbackYes') },
+    { value: 'no', label: t(language, 'feedbackNo') },
+  ]), [language]);
+
+  const logbookReasonOptions = useMemo(() => ([
+    { value: 'too_many_fields', label: t(language, 'feedbackReasonTooManyFields') },
+    { value: 'hard_to_find_type', label: t(language, 'feedbackReasonHardToFindType') },
+    { value: 'hard_to_edit', label: t(language, 'feedbackReasonHardToEdit') },
+    { value: 'other', label: t(language, 'feedbackReasonOther') },
+  ]), [language]);
 
   // Previous entries are read once so the form can show the last reading next to
   // each field and reuse the yeast and SO₂ product the winemaker already used.
@@ -213,14 +235,33 @@ export default function AddEntryScreen({ route, navigation }) {
     return null;
   };
 
-  const persist = (entryData) => {
+  const persist = async (entryData) => {
     setSaving(true);
+    const uid = auth.currentUser.uid;
+
+    // Offline-safe pre-count: if the user already has 2 entries, this create
+    // is the 3rd and may open the one-time logbook speed survey. Edits never count.
+    let shouldAskLogbookSurvey = false;
+    if (!isEditing) {
+      try {
+        const asked = await hasAskedFeedback(uid, FEEDBACK_TYPES.LOGBOOK_SPEED);
+        if (!asked) {
+          const wines = await getWines(uid);
+          const lists = await Promise.all(wines.map((w) => getEntries(uid, w.id)));
+          const total = lists.reduce((sum, list) => sum + list.length, 0);
+          shouldAskLogbookSurvey = total === 2;
+        }
+      } catch (e) {
+        reportError(e, { screen: 'AddEntry', action: 'checkLogbookSurvey' });
+      }
+    }
+
     // Don't await — write promises don't resolve until the backend
     // acknowledges the write, so awaiting would hang the UI indefinitely
     // while offline. The entry is written to the local cache immediately.
     const write = isEditing
-      ? updateEntry(auth.currentUser.uid, wine.id, existingEntry.id, entryData)
-      : addEntry(auth.currentUser.uid, wine.id, entryData);
+      ? updateEntry(uid, wine.id, existingEntry.id, entryData)
+      : addEntry(uid, wine.id, entryData);
 
     write.catch((e) => {
       reportError(e, {
@@ -232,7 +273,10 @@ export default function AddEntryScreen({ route, navigation }) {
 
     setSaving(false);
     if (!isEditing && type === 'sulfur') {
+      setPendingLogbookSurvey(shouldAskLogbookSurvey);
       setShowReminder(true);
+    } else if (shouldAskLogbookSurvey) {
+      setShowLogbookSurvey(true);
     } else {
       navigation.goBack();
     }
@@ -277,7 +321,49 @@ export default function AddEntryScreen({ route, navigation }) {
   const handleReminderPick = async (days) => {
     setShowReminder(false);
     if (days) await scheduleReminder(wine.name, days, language);
+    if (pendingLogbookSurvey) {
+      setPendingLogbookSurvey(false);
+      setShowLogbookSurvey(true);
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const finishLogbookSurvey = () => {
+    setShowLogbookSurvey(false);
     navigation.goBack();
+  };
+
+  const onLogbookSurveySubmit = ({ choice, comment, reasons }) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid || !choice) {
+      markFeedbackAsked(uid, FEEDBACK_TYPES.LOGBOOK_SPEED);
+      finishLogbookSurvey();
+      return;
+    }
+
+    let finalComment = comment;
+    if (choice === 'no') {
+      const reasonLabels = (reasons || []).map((value) => {
+        const opt = logbookReasonOptions.find((r) => r.value === value);
+        return opt?.label || value;
+      });
+      finalComment = buildLogbookFeedbackComment(reasonLabels, comment);
+    }
+
+    submitFeedback({
+      userId: uid,
+      type: FEEDBACK_TYPES.LOGBOOK_SPEED,
+      choice,
+      comment: finalComment,
+      context: 'logbook',
+    });
+    finishLogbookSurvey();
+  };
+
+  const onLogbookSurveyDismiss = () => {
+    markFeedbackAsked(auth.currentUser?.uid, FEEDBACK_TYPES.LOGBOOK_SPEED);
+    finishLogbookSurvey();
   };
 
   return (
@@ -316,6 +402,22 @@ export default function AddEntryScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
+
+      <FeedbackSurveyModal
+        visible={showLogbookSurvey}
+        title={t(language, 'feedbackLogbookSpeed')}
+        choices={logbookSurveyChoices}
+        reasonOptions={logbookReasonOptions}
+        needsReasons={(c) => c === 'no'}
+        needsComment={(c) => c === 'no'}
+        reasonsPrompt={t(language, 'feedbackReasonsPrompt')}
+        commentPlaceholder={t(language, 'feedbackCommentPlaceholder')}
+        submitLabel={t(language, 'feedbackSubmit')}
+        skipLabel={t(language, 'feedbackSkip')}
+        otherReasonValue="other"
+        onSubmit={onLogbookSurveySubmit}
+        onDismiss={onLogbookSurveyDismiss}
+      />
 
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
         <ScreenWrapper style={styles.content}>

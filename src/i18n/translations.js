@@ -304,6 +304,21 @@ export const translations = {
     phonePlaceholder:      '+385 91 234 5678',
     language:              'Language',
 
+    // Feedback (beta micro-surveys)
+    feedbackAssistantUseful: 'Was this advice useful?',
+    feedbackLogbookSpeed:    'Is logbook entry fast enough for cellar work?',
+    feedbackYes:             'Yes',
+    feedbackPartially:       'Partially',
+    feedbackNo:              'No',
+    feedbackSkip:            'Skip',
+    feedbackSubmit:          'Send',
+    feedbackCommentPlaceholder: 'Optional comment',
+    feedbackReasonsPrompt:   'What was slow? (optional)',
+    feedbackReasonTooManyFields: 'Too many fields',
+    feedbackReasonHardToFindType: 'Hard to find entry type',
+    feedbackReasonHardToEdit: 'Hard to edit',
+    feedbackReasonOther:     'Other',
+
     // Common
     error:                 'Error',
     ok:                    'OK',
@@ -615,6 +630,21 @@ export const translations = {
     wineryPlaceholder:     'OPG Horvat',
     phonePlaceholder:      '+385 91 234 5678',
     language:              'Jezik',
+
+    // Feedback (beta micro-surveys)
+    feedbackAssistantUseful: 'Je li ovaj savjet bio koristan?',
+    feedbackLogbookSpeed:    'Je li upis u dnevnik brz za rad u podrumu?',
+    feedbackYes:             'Da',
+    feedbackPartially:       'Djelomično',
+    feedbackNo:              'Ne',
+    feedbackSkip:            'Preskoči',
+    feedbackSubmit:          'Pošalji',
+    feedbackCommentPlaceholder: 'Opcionalni komentar',
+    feedbackReasonsPrompt:   'Što je usporilo? (opcionalno)',
+    feedbackReasonTooManyFields: 'Previše polja',
+    feedbackReasonHardToFindType: 'Teško naći vrstu upisa',
+    feedbackReasonHardToEdit: 'Teško uređivati',
+    feedbackReasonOther:     'Ostalo',
 
     // Common
     error:                 'Greška',
