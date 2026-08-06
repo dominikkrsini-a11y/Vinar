@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import {
   View, Text, ActivityIndicator, TouchableOpacity,
   KeyboardAvoidingView, Platform,
@@ -11,6 +11,7 @@ import { AssistantMessageList } from '../components/assistant/AssistantMessageLi
 import { AssistantInputBar } from '../components/assistant/AssistantInputBar';
 import { PendingImagePreview } from '../components/assistant/PendingImagePreview';
 import { useAssistantOrchestrator } from '../components/assistant/useAssistantOrchestrator';
+import { FeedbackSurveyModal } from '../components/feedback/FeedbackSurveyModal';
 
 export default function AssistantScreen({ route, navigation }) {
   const { language } = useContext(LanguageContext);
@@ -32,7 +33,16 @@ export default function AssistantScreen({ route, navigation }) {
     setPendingImage,
     handleCamera,
     sendMessage,
+    showAssistantSurvey,
+    onAssistantSurveySubmit,
+    onAssistantSurveyDismiss,
   } = useAssistantOrchestrator({ language, t, focusWine });
+
+  const surveyChoices = useMemo(() => ([
+    { value: 'yes', label: t(language, 'feedbackYes') },
+    { value: 'partially', label: t(language, 'feedbackPartially') },
+    { value: 'no', label: t(language, 'feedbackNo') },
+  ]), [language]);
 
   if (loadingCtx) {
     return (
@@ -96,6 +106,18 @@ export default function AssistantScreen({ route, navigation }) {
           loading={loading}
           onPressCamera={handleCamera}
           onPressSend={sendMessage}
+        />
+
+        <FeedbackSurveyModal
+          visible={showAssistantSurvey}
+          title={t(language, 'feedbackAssistantUseful')}
+          choices={surveyChoices}
+          needsComment={(c) => c === 'partially' || c === 'no'}
+          commentPlaceholder={t(language, 'feedbackCommentPlaceholder')}
+          submitLabel={t(language, 'feedbackSubmit')}
+          skipLabel={t(language, 'feedbackSkip')}
+          onSubmit={onAssistantSurveySubmit}
+          onDismiss={onAssistantSurveyDismiss}
         />
 
       </View>
