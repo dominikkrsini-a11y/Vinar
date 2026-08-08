@@ -133,6 +133,8 @@ export function buildWinePdfHtml({ wine, entries, language }) {
         .empty { color: #999; font-style: italic; font-size: 12px; margin-top: 6px; }
         .footer { margin-top: 40px; font-size: 11px; color: #999;
                   text-align: center; border-top: 1px solid #e8dcc8; padding-top: 12px; }
+        .footer .brand { color: #8B6914; font-weight: bold; }
+        .footer .tagline { margin-top: 4px; }
       </style>
     </head>
     <body>
@@ -244,7 +246,18 @@ export function buildWinePdfHtml({ wine, entries, language }) {
           : ''
       }
 
-      <div class="footer">Vinar App · ${wine.name} · ${new Date().getFullYear()}</div>
+      <!-- Every shared logbook doubles as a small ad for the app. -->
+      <div class="footer">
+        <div><span class="brand">Vinar</span> · ${cell(wine.name)} · ${new Date().getFullYear()}</div>
+        <div class="tagline">
+          ${
+            hr
+              ? 'Izrađeno u aplikaciji Vinar — dnevnik podruma, kalkulatori i AI asistent za vinare'
+              : 'Made with Vinar — the cellar logbook, calculators, and AI assistant for winemakers'
+          }
+          · vinar.app
+        </div>
+      </div>
 
     </body>
     </html>`;
