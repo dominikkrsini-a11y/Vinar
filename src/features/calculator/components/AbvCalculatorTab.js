@@ -20,6 +20,7 @@ export function AbvCalculatorTab({
   abvResult,
   onCalculate,
   onReset,
+  onShare,
 }) {
   return (
     <>
@@ -84,6 +85,14 @@ export function AbvCalculatorTab({
           </View>
           <View style={styles.divider} />
           <Text style={styles.warning}>{t(language, 'abvWarning')}</Text>
+
+          {onShare ? (
+            <TouchableOpacity style={styles.saveEntryBtn} onPress={onShare}>
+              <Text style={styles.saveEntryBtnText}>
+                📤 {t(language, 'shareResult')}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       )}
     </>

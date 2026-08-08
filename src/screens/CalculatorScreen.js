@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, Alert, Modal,
+  View, Text, TouchableOpacity, Alert, Modal, Share,
   StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { colors } from '../theme/colors';
@@ -10,6 +10,7 @@ import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { calculateABV, calculateSO2Addition, correctSG, getTargetFreeSO2 } from '../features/calculator/helpers';
 import { buildSulfurPrefill } from '../features/calculator/so2Entry';
+import { buildAbvShareMessage, buildSo2ShareMessage } from '../features/calculator/shareResults';
 import { reportError } from '../utils/reportError';
 import { track, EVENTS } from '../services/analytics';
 import { toNumber } from '../utils/numbers';
@@ -137,6 +138,32 @@ export default function CalculatorScreen({ navigation }) {
     setSo2Result(result);
   };
 
+  // ─── SHARE RESULTS ─────────────────────────────────────────────────────
+  const shareMessage = async (message, calc) => {
+    if (!message) return;
+    try {
+      const { action } = await Share.share({ message });
+      if (action !== Share.dismissedAction) {
+        track(EVENTS.CALC_RESULT_SHARED, { calc });
+      }
+    } catch (e) {
+      reportError(e, { screen: 'Calculator', action: 'shareResult', calc });
+    }
+  };
+
+  const handleShareAbv = () =>
+    shareMessage(buildAbvShareMessage({ abvResult, language }), 'abv');
+
+  const handleShareSo2 = () =>
+    shareMessage(
+      buildSo2ShareMessage({
+        so2Result,
+        productLabel: PRODUCTS.find(p => p.key === product)?.label,
+        language,
+      }),
+      'so2'
+    );
+
   // ─── SO2 → LOGBOOK ─────────────────────────────────────────────────────
   // Opens the normal entry form with the calculated values filled in. The
   // winemaker confirms and saves there; nothing is written from here.
@@ -230,6 +257,7 @@ export default function CalculatorScreen({ navigation }) {
               setEndTemp={setEndTemp}
               abvError={abvError}
               abvResult={abvResult}
+              onShare={handleShareAbv}
               onCalculate={handleABV}
               onReset={() => {
                 setStartSG(''); setStartTemp('');
@@ -265,6 +293,7 @@ export default function CalculatorScreen({ navigation }) {
               so2Error={so2Error}
               so2Result={so2Result}
               onSaveToLogbook={handleSaveToLogbook}
+              onShare={handleShareSo2}
               onCalculate={handleSO2}
               onReset={() => {
                 setPH(''); setCurrentSO2('');

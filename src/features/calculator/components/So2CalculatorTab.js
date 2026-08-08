@@ -31,6 +31,7 @@ export function So2CalculatorTab({
   onCalculate,
   onReset,
   onSaveToLogbook,
+  onShare,
 }) {
   return (
     <>
@@ -192,6 +193,14 @@ export function So2CalculatorTab({
             <TouchableOpacity style={styles.saveEntryBtn} onPress={onSaveToLogbook}>
               <Text style={styles.saveEntryBtnText}>
                 📋 {t(language, 'saveAsSulfurEntry')}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {onShare ? (
+            <TouchableOpacity style={styles.saveEntryBtn} onPress={onShare}>
+              <Text style={styles.saveEntryBtnText}>
+                📤 {t(language, 'shareResult')}
               </Text>
             </TouchableOpacity>
           ) : null}

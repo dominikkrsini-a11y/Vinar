@@ -206,6 +206,8 @@ export const translations = {
     productBlend:          'Blend powder',
     productCampden:        'Campden tablets',
     productLiquid:         'Liquid SO₂',
+    shareResult:           'Share result',
+    shareFooter:           'Calculated with Vinar — the winemaker\'s assistant · vinar.app',
 
     // Reference
     reference:             'Reference',
@@ -533,6 +535,8 @@ export const translations = {
     productBlend:          'Sumporni prah (mješavina)',
     productCampden:        'Campden tablete',
     productLiquid:         'Tekući SO₂',
+    shareResult:           'Podijeli rezultat',
+    shareFooter:           'Izračunato u aplikaciji Vinar — asistent za vinare · vinar.app',
 
     // Reference
     reference:             'Referentne tablice',
