@@ -12,6 +12,7 @@ import { subscribeToEntries, deleteWine, deleteEntry } from '../firebase/firesto
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
+import { track, EVENTS } from '../services/analytics';
 import { buildWinePdfHtml } from './wine-detail/buildWinePdfHtml';
 import { FermentationChart } from './wine-detail/FermentationChart';
 import {
@@ -75,6 +76,7 @@ export default function WineDetailScreen({ route, navigation }) {
         dialogTitle: `${wine.name} — Logbook`,
         UTI: 'com.adobe.pdf',
       });
+      track(EVENTS.PDF_EXPORTED, { entryCount: entries.length });
     } catch (e) {
       Alert.alert(
         language === 'hr' ? 'Greška' : 'Error',

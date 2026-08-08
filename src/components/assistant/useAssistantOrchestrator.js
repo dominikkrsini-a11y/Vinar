@@ -9,6 +9,7 @@ import {
   submitFeedback,
 } from '../../firebase/feedback';
 import { getAssistantBaseUrl, sendAssistantMessage } from '../../services/assistant/client';
+import { track, EVENTS } from '../../services/analytics';
 import { reportError } from '../../utils/reportError';
 import { buildUserContent } from './buildUserContent';
 import { captureCameraImage } from './camera';
@@ -101,6 +102,11 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
         role: 'assistant',
         content: [{ type: 'text', text: data.content[0].text }],
       }]);
+
+      track(EVENTS.ASSISTANT_MESSAGE_SENT, {
+        hasImage: Boolean(displayImage),
+        aboutWine: Boolean(focusWine),
+      });
 
       // First successful reply only — error bubbles in catch must not trigger this.
       if (!assistantSurveyAskedRef.current) {

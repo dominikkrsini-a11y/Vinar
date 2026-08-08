@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { loginWithEmail, registerWithEmail } from '../firebase/auth';
+import { track, EVENTS } from '../services/analytics';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { TextField } from '../components/ui/TextField';
@@ -36,8 +37,10 @@ export default function LoginScreen() {
     try {
       if (isLogin) {
         await loginWithEmail(email, password);
+        track(EVENTS.SIGN_IN);
       } else {
         await registerWithEmail(email, password);
+        track(EVENTS.SIGN_UP);
       }
       // Navigation happens automatically via onAuthChange
       // We do NOT setLoading(false) here — component may already be gone

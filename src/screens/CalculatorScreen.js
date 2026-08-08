@@ -11,6 +11,7 @@ import { t } from '../i18n/translations';
 import { calculateABV, calculateSO2Addition, correctSG, getTargetFreeSO2 } from '../features/calculator/helpers';
 import { buildSulfurPrefill } from '../features/calculator/so2Entry';
 import { reportError } from '../utils/reportError';
+import { track, EVENTS } from '../services/analytics';
 import { toNumber } from '../utils/numbers';
 import { TabSwitcher } from '../features/calculator/components/TabSwitcher';
 import { CalcCard } from '../features/calculator/components/CalcCard';
@@ -88,6 +89,7 @@ export default function CalculatorScreen({ navigation }) {
     }
     const abv = calculateABV(og, ogT, fg, fgT);
     if (abv < 0 || abv > 25) { setAbvError(t(language, 'calcAbvOutOfRange')); return; }
+    track(EVENTS.CALC_ABV_USED);
     setAbvResult({
       abv:         abv.toFixed(1),
       correctedOG: (correctSG(og, ogT) * 1000).toFixed(1),
@@ -115,6 +117,7 @@ export default function CalculatorScreen({ navigation }) {
     }
     const target = wineType === 'sweet' ? 45 : getTargetFreeSO2(wineType, pHVal);
     if (currentVal >= target) {
+      track(EVENTS.CALC_SO2_USED, { product, sufficient: true });
       setSo2Result({ sufficient: true, target, current: currentVal });
       return;
     }
@@ -130,6 +133,7 @@ export default function CalculatorScreen({ navigation }) {
       const calc = calculateSO2Addition(target, currentVal, volVal, pct);
       result = { sufficient: false, target, current: currentVal, ...calc, pct };
     }
+    track(EVENTS.CALC_SO2_USED, { product, sufficient: false });
     setSo2Result(result);
   };
 

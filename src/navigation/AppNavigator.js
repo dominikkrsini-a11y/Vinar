@@ -1,6 +1,6 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
@@ -8,6 +8,7 @@ import { onAuthChange } from '../firebase/auth';
 import { getUserProfile } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { reportError } from '../utils/reportError';
+import { trackScreenView } from '../services/analytics';
 import { OfflineBanner } from '../components/ui/OfflineBanner';
 
 import LoginScreen       from '../screens/LoginScreen';
@@ -79,6 +80,11 @@ export default function AppNavigator() {
   const [needsLang,    setNeedsLang]    = useState(false);
   const [checkingLang, setCheckingLang] = useState(false);
   const { setLanguage }                 = useContext(LanguageContext);
+  const navigationRef                   = useNavigationContainerRef();
+  // Last route already reported — tab presses fire onStateChange for every
+  // state mutation, so without this guard the same screen would be tracked
+  // repeatedly.
+  const routeNameRef                    = useRef(null);
 
   useEffect(() => {
     const unsub = onAuthChange(async (u) => {
@@ -130,7 +136,19 @@ export default function AppNavigator() {
   return (
     <View style={{ flex: 1 }}>
       <OfflineBanner />
-      <NavigationContainer>
+      <NavigationContainer
+        ref={navigationRef}
+        onReady={() => {
+          routeNameRef.current = navigationRef.getCurrentRoute()?.name;
+          trackScreenView(routeNameRef.current);
+        }}
+        onStateChange={() => {
+          const name = navigationRef.getCurrentRoute()?.name;
+          if (name && name !== routeNameRef.current) {
+            routeNameRef.current = name;
+            trackScreenView(name);
+          }
+        }}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {user ? (
             <>

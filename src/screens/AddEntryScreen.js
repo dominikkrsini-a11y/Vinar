@@ -20,6 +20,7 @@ import {
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
+import { track, EVENTS } from '../services/analytics';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { TextField } from '../components/ui/TextField';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
@@ -271,6 +272,7 @@ export default function AddEntryScreen({ route, navigation }) {
       });
     });
 
+    if (!isEditing) track(EVENTS.ENTRY_ADDED, { type });
     setSaving(false);
     if (!isEditing && type === 'sulfur') {
       setPendingLogbookSurvey(shouldAskLogbookSurvey);
