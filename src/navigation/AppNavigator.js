@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext, useRef } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
+import * as Linking from 'expo-linking';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
@@ -26,6 +27,27 @@ import LanguageSelectScreen from '../screens/LanguageSelectScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+// Deep links: vinar://calculator, vinar://marketplace, … (plus the Expo Go
+// dev-client URL via createURL). Shared content and future referral links can
+// land people directly on a screen instead of wherever the app last was.
+const linking = {
+  prefixes: [Linking.createURL('/'), 'vinar://'],
+  config: {
+    screens: {
+      Main: {
+        screens: {
+          Dashboard:  'dashboard',
+          Calculator: 'calculator',
+          Assistant:  'assistant',
+          Profile:    'profile',
+        },
+      },
+      Marketplace: 'marketplace',
+      Reference:   'reference',
+    },
+  },
+};
 
 function TabIcon({ name, color }) {
   const icons = {
@@ -138,6 +160,7 @@ export default function AppNavigator() {
       <OfflineBanner />
       <NavigationContainer
         ref={navigationRef}
+        linking={linking}
         onReady={() => {
           routeNameRef.current = navigationRef.getCurrentRoute()?.name;
           trackScreenView(routeNameRef.current);
