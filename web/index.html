@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vinar — dnevnik, kalkulatori i AI asistent za vinare</title>
+  <meta name="description" content="Vinar: podrumski dnevnik, SO₂ i ABV kalkulatori te AI asistent za male proizvođače vina. Radi offline u podrumu." />
+  <meta property="og:title" content="Vinar — asistent za vinare" />
+  <meta property="og:description" content="Podrumski dnevnik, vinarski kalkulatori i AI asistent — za OPG-ove i male vinarije." />
+  <meta property="og:type" content="website" />
+  <style>
+    :root {
+      --bg: #180d0d;
+      --surface: #2a1010;
+      --surface-deep: #1f0c0c;
+      --border: #3a1717;
+      --gold: #c9a84c;
+      --gold-dim: #8a6a2a;
+      --text: #f3e8d6;
+      --muted: #b8b0b0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0;
+    }
+    .brand { font-size: 22px; font-weight: 700; color: var(--gold); letter-spacing: 0.5px; }
+    .lang-toggle {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      display: flex; overflow: hidden;
+    }
+    .lang-toggle button {
+      background: none; border: none; color: var(--muted); font-size: 13px;
+      padding: 6px 14px; cursor: pointer; font-weight: 600;
+    }
+    .lang-toggle button.active { background: var(--gold); color: var(--bg); }
+
+    .hero { text-align: center; padding: 72px 0 56px; }
+    .hero .glass { font-size: 64px; }
+    .hero h1 {
+      font-size: clamp(30px, 5vw, 46px); font-weight: 800; color: var(--gold);
+      margin: 16px 0 12px; line-height: 1.2;
+    }
+    .hero p.tagline {
+      font-size: clamp(16px, 2.5vw, 19px); color: var(--muted);
+      max-width: 640px; margin: 0 auto 32px;
+    }
+    .badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      border: 1px solid var(--gold-dim); border-radius: 10px;
+      padding: 10px 20px; color: var(--text); font-size: 14px;
+      display: flex; flex-direction: column; align-items: flex-start;
+      min-width: 170px; background: var(--surface-deep); text-align: left;
+    }
+    .badge small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+    .badge strong { font-size: 15px; }
+
+    .features {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px; padding: 24px 0 56px;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 24px;
+    }
+    .card .icon { font-size: 34px; }
+    .card h3 { color: var(--gold); font-size: 17px; margin: 10px 0 6px; }
+    .card p { color: var(--muted); font-size: 14px; }
+
+    .cta {
+      background: var(--surface-deep); border: 1px solid var(--border); border-radius: 16px;
+      text-align: center; padding: 48px 24px; margin-bottom: 64px;
+    }
+    .cta h2 { color: var(--gold); font-size: 26px; margin-bottom: 10px; }
+    .cta p { color: var(--muted); max-width: 520px; margin: 0 auto 24px; }
+    .cta a.button {
+      display: inline-block; background: var(--gold); color: var(--bg);
+      font-weight: 700; text-decoration: none; border-radius: 10px;
+      padding: 14px 32px; font-size: 16px;
+    }
+    .cta a.button:hover { filter: brightness(1.1); }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 28px 0 40px;
+      color: var(--muted); font-size: 13px; text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">🍷 Vinar</div>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button id="btn-hr" class="active" onclick="setLang('hr')">HR</button>
+        <button id="btn-en" onclick="setLang('en')">EN</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="glass">🍷</div>
+      <h1 data-hr="Vaš podrum. Na dlanu." data-en="Your cellar. In your pocket."></h1>
+      <p class="tagline"
+         data-hr="Podrumski dnevnik, vinarski kalkulatori i AI asistent koji poznaje vaša vina — za OPG-ove i male vinarije. Radi i offline, u podrumu."
+         data-en="A cellar logbook, winemaking calculators, and an AI assistant that knows your wines — built for small producers. Works offline, in the cellar."></p>
+      <div class="badges">
+        <div class="badge">
+          <small data-hr="Uskoro na" data-en="Coming soon to"></small>
+          <strong> App Store</strong>
+        </div>
+        <div class="badge">
+          <small data-hr="Uskoro na" data-en="Coming soon to"></small>
+          <strong>▶ Google Play</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="card">
+        <div class="icon">📋</div>
+        <h3 data-hr="Podrumski dnevnik" data-en="Cellar logbook"></h3>
+        <p data-hr="Vrenje, sumporenje, pretoci i mjerenja za svako vino — s grafikonom fermentacije i statusom koji upozorava kada je vrijeme za provjeru SO₂."
+           data-en="Fermentation, sulfur, racking, and measurements for every wine — with a fermentation chart and a status that warns you when SO₂ is due."></p>
+      </div>
+      <div class="card">
+        <div class="icon">🧪</div>
+        <h3 data-hr="Vinarski kalkulatori" data-en="Winemaking calculators"></h3>
+        <p data-hr="ABV iz specifične gustoće i doziranje SO₂ prema pH — rezultat u g/hL i ukupnim gramima, spreman za upis u dnevnik."
+           data-en="ABV from specific gravity and SO₂ dosing by pH — output in g/hL and total grams, ready to save into the logbook."></p>
+      </div>
+      <div class="card">
+        <div class="icon">💬</div>
+        <h3 data-hr="AI asistent" data-en="AI assistant"></h3>
+        <p data-hr="Pitajte bilo što o svojim vinima. Asistent poznaje vaš dnevnik i odgovara konkretno — poput enologa koji zna vaš podrum."
+           data-en="Ask anything about your wines. The assistant knows your logbook and answers specifically — like an enologist who knows your cellar."></p>
+      </div>
+      <div class="card">
+        <div class="icon">📄</div>
+        <h3 data-hr="PDF izvještaji" data-en="PDF reports"></h3>
+        <p data-hr="Izvezite dnevnik vina kao uredan PDF — za evidenciju, enologa ili inspekciju."
+           data-en="Export a wine's logbook as a clean PDF — for your records, your enologist, or an inspection."></p>
+      </div>
+      <div class="card">
+        <div class="icon">🛒</div>
+        <h3 data-hr="Tržnica" data-en="Marketplace"></h3>
+        <p data-hr="Oglasi za grožđe, rinfuzno vino i opremu, plus imenik hrvatskih dobavljača."
+           data-en="Listings for grapes, bulk wine, and equipment, plus a supplier directory."></p>
+      </div>
+      <div class="card">
+        <div class="icon">📚</div>
+        <h3 data-hr="Referentne tablice" data-en="Reference tables"></h3>
+        <p data-hr="Ciljne vrijednosti SO₂ po pH, rasponi kiselosti i kontakti vinarskih laboratorija."
+           data-en="Free SO₂ targets by pH, acidity ranges, and wine lab contacts."></p>
+      </div>
+    </section>
+
+    <section class="cta">
+      <h2 data-hr="Želite probati Vinar?" data-en="Want to try Vinar?"></h2>
+      <p data-hr="Javite nam se i uđite među prve korisnike — vaše povratne informacije oblikuju aplikaciju."
+         data-en="Get in touch and join the first users — your feedback shapes the app."></p>
+      <a class="button" href="mailto:hello@vinar.app?subject=Vinar%20beta"
+         data-hr="Prijavi interes" data-en="Register interest"></a>
+    </section>
+
+    <footer>
+      <div data-hr="Vinar — asistent za vinare. Napravljeno s ❤️ za male proizvođače."
+           data-en="Vinar — the winemaker's assistant. Made with ❤️ for small producers."></div>
+    </footer>
+  </div>
+
+  <script>
+    function setLang(lang) {
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-hr]').forEach(function (el) {
+        el.textContent = el.getAttribute('data-' + lang);
+      });
+      document.getElementById('btn-hr').classList.toggle('active', lang === 'hr');
+      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      document.title = lang === 'hr'
+        ? 'Vinar — dnevnik, kalkulatori i AI asistent za vinare'
+        : "Vinar — the winemaker's logbook, calculators & AI assistant";
+    }
+    setLang('hr');
+  </script>
+</body>
+</html>
