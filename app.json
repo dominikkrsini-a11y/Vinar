@@ -4,6 +4,7 @@
     "slug": "vinar",
     "scheme": "vinar",
     "version": "1.0.0",
+    "description": "Cellar logbook, winemaking calculators, and an AI assistant for small wine producers. Track fermentation, SO2, racking, and measurements — even offline in the cellar.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
