@@ -1,0 +1,15 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "npm ci\nnpm ci --prefix server",
+  "start": "",
+  "terminals": [
+    {
+      "name": "assistant-proxy",
+      "command": "npm run dev --prefix server",
+      "description": "Vinar Express assistant proxy (port 3001; needs server/.env secrets)"
+    }
+  ]
+}
