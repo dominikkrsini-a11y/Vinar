@@ -24,6 +24,7 @@ import AssistantScreen   from '../screens/AssistantScreen';
 import ProfileScreen     from '../screens/ProfileScreen';
 import MarketplaceScreen from '../screens/MarketplaceScreen';
 import LanguageSelectScreen from '../screens/LanguageSelectScreen';
+import OnboardingScreen  from '../screens/OnboardingScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -98,10 +99,11 @@ function MainTabs() {
 }
 
 export default function AppNavigator() {
-  const [user,         setUser]         = useState(undefined);
-  const [needsLang,    setNeedsLang]    = useState(false);
-  const [checkingLang, setCheckingLang] = useState(false);
-  const { setLanguage }                 = useContext(LanguageContext);
+  const [user,            setUser]            = useState(undefined);
+  const [needsLang,       setNeedsLang]       = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [checkingLang,    setCheckingLang]    = useState(false);
+  const { setLanguage }                       = useContext(LanguageContext);
   const navigationRef                   = useNavigationContainerRef();
   // Last route already reported — tab presses fire onStateChange for every
   // state mutation, so without this guard the same screen would be tracked
@@ -151,8 +153,15 @@ export default function AppNavigator() {
       <LanguageSelectScreen onLanguageSelected={(lang) => {
         setLanguage(lang);
         setNeedsLang(false);
+        // Fresh profile (no language yet) means a brand-new user — chain the
+        // feature tour before the app. Existing users never re-enter this path.
+        setNeedsOnboarding(true);
       }} />
     );
+  }
+
+  if (user && needsOnboarding) {
+    return <OnboardingScreen onDone={() => setNeedsOnboarding(false)} />;
   }
 
   return (

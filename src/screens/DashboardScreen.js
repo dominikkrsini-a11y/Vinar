@@ -198,8 +198,14 @@ export default function DashboardScreen({ navigation }) {
         </>
       ) : (
         <View style={styles.emptyWines}>
+          <Text style={styles.emptyWinesIcon}>🍇</Text>
           <Text style={styles.emptyWinesTitle}>{t(language, 'noWinesTitle')}</Text>
           <Text style={styles.emptyWinesSub}>{t(language, 'noWinesSub')}</Text>
+          <TouchableOpacity
+            style={styles.emptyWinesBtn}
+            onPress={() => navigation.navigate('AddWine')}>
+            <Text style={styles.emptyWinesBtnText}>{t(language, 'noWinesCta')}</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -266,10 +272,14 @@ const styles = StyleSheet.create({
   wineYear:        { fontSize: 18, color: colors.gold, fontWeight: '700' },
   emptyWines:      { backgroundColor: colors.surface, borderRadius: 10,
                      borderWidth: 1, borderColor: colors.border,
-                     padding: 20, marginBottom: 32, alignItems: 'center' },
+                     padding: 24, marginBottom: 32, alignItems: 'center' },
+  emptyWinesIcon:  { fontSize: 40, marginBottom: 10 },
   emptyWinesTitle: { fontSize: 15, color: colors.textPrimary, fontWeight: '600' },
   emptyWinesSub:   { fontSize: 13, color: colors.textMuted,
                      marginTop: 6, textAlign: 'center' },
+  emptyWinesBtn:   { backgroundColor: colors.gold, borderRadius: 20,
+                     paddingVertical: 10, paddingHorizontal: 24, marginTop: 16 },
+  emptyWinesBtnText: { color: colors.background, fontSize: 14, fontWeight: '700' },
   actionCard:      { backgroundColor: colors.surface, borderRadius: 10,
                      borderWidth: 1, borderColor: colors.border,
                      flexDirection: 'row', alignItems: 'center',
