@@ -11,12 +11,13 @@ export function AssistantInputBar({
   loading,
   onPressCamera,
   onPressSend,
+  onPressCancel,
 }) {
   const disabled = ((!input.trim() && !pendingImage) || loading);
 
   return (
     <View style={styles.inputRow}>
-      <TouchableOpacity style={styles.plusBtn} onPress={onPressCamera}>
+      <TouchableOpacity style={styles.plusBtn} onPress={onPressCamera} disabled={loading}>
         <Text style={styles.plusBtnText}>+</Text>
       </TouchableOpacity>
       <TextInput
@@ -27,14 +28,25 @@ export function AssistantInputBar({
         placeholderTextColor={colors.textMuted}
         multiline
         maxLength={500}
+        editable={!loading}
       />
-      <TouchableOpacity
-        style={[styles.sendBtn, disabled && styles.sendBtnDisabled]}
-        onPress={onPressSend}
-        disabled={disabled}
-      >
-        <Text style={styles.sendBtnText}>↑</Text>
-      </TouchableOpacity>
+      {loading ? (
+        <TouchableOpacity
+          style={styles.sendBtn}
+          onPress={onPressCancel}
+          accessibilityLabel={t(language, 'assistantCancel')}
+        >
+          <Text style={styles.sendBtnText}>✕</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={[styles.sendBtn, disabled && styles.sendBtnDisabled]}
+          onPress={onPressSend}
+          disabled={disabled}
+        >
+          <Text style={styles.sendBtnText}>↑</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

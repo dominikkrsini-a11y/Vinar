@@ -10,6 +10,7 @@ import { getUserProfile } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { reportError } from '../utils/reportError';
 import { trackScreenView } from '../services/analytics';
+import { getSessionPrefs, setSessionPrefs } from '../services/sessionCache';
 import { OfflineBanner } from '../components/ui/OfflineBanner';
 
 import LoginScreen       from '../screens/LoginScreen';
@@ -63,6 +64,7 @@ function MainTabs() {
 
   return (
     <Tab.Navigator
+      lazy={true}
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
@@ -103,6 +105,8 @@ export default function AppNavigator() {
   const [needsLang,       setNeedsLang]       = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [checkingLang,    setCheckingLang]    = useState(false);
+  const [cachedPrefs,     setCachedPrefs]     = useState(null);
+  const cachedPrefsRef                        = useRef({});
   const { setLanguage }                       = useContext(LanguageContext);
   const navigationRef                   = useNavigationContainerRef();
   // Last route already reported — tab presses fire onStateChange for every
@@ -111,34 +115,73 @@ export default function AppNavigator() {
   const routeNameRef                    = useRef(null);
 
   useEffect(() => {
+    let cancelled = false;
+    getSessionPrefs().then((prefs) => {
+      if (cancelled) return;
+      cachedPrefsRef.current = prefs;
+      if (prefs.language) setLanguage(prefs.language);
+      setCachedPrefs(prefs);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load-once
+  }, []);
+
+  const prefsReady = cachedPrefs !== null;
+
+  useEffect(() => {
+    if (!prefsReady) return undefined;
     const unsub = onAuthChange(async (u) => {
       setUser(u);
       if (!u) {
         setCheckingLang(false);
         setNeedsLang(false);
+        setNeedsOnboarding(false);
         return;
       }
-      setCheckingLang(true);
+      const cache = cachedPrefsRef.current;
+      if (cache.language) {
+        setLanguage(cache.language);
+        setNeedsLang(false);
+        setNeedsOnboarding(cache.hasOnboarded === false);
+        setCheckingLang(false);
+      } else {
+        setCheckingLang(true);
+      }
       try {
         const profile = await getUserProfile(u.uid);
         if (profile?.language) {
           setLanguage(profile.language);
           setNeedsLang(false);
+          // Existing users predate hasOnboarded — missing means already in the app.
+          const onboarded = profile.hasOnboarded !== false;
+          const nextPrefs = { language: profile.language, hasOnboarded: onboarded };
+          cachedPrefsRef.current = nextPrefs;
+          setCachedPrefs(nextPrefs);
+          setSessionPrefs(nextPrefs);
+          setNeedsOnboarding(profile.hasOnboarded === false);
+        } else if (cache.language) {
+          setNeedsLang(false);
+          setNeedsOnboarding(cache.hasOnboarded === false);
         } else {
           setNeedsLang(true);
         }
       } catch (e) {
         reportError(e, { screen: 'AppNavigator', action: 'getUserProfileLanguage' });
-        setNeedsLang(true);
+        // A failed/slow profile read must not bounce a returning user into
+        // language select or onboarding. Stay on the cached shell.
+        if (!cache.language) {
+          setNeedsLang(false);
+          setNeedsOnboarding(false);
+        }
       } finally {
         setCheckingLang(false);
       }
     });
     return unsub;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — load-once pattern, adding dependency causes infinite loop
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribe once prefs are loaded
+  }, [prefsReady]);
 
-  if (user === undefined || checkingLang) {
+  if (user === undefined || cachedPrefs === null || (checkingLang && !cachedPrefs.language)) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background,
         alignItems: 'center', justifyContent: 'center' }}>
@@ -153,6 +196,10 @@ export default function AppNavigator() {
       <LanguageSelectScreen onLanguageSelected={(lang) => {
         setLanguage(lang);
         setNeedsLang(false);
+        const nextPrefs = { language: lang, hasOnboarded: false };
+        cachedPrefsRef.current = nextPrefs;
+        setCachedPrefs(nextPrefs);
+        setSessionPrefs(nextPrefs);
         // Fresh profile (no language yet) means a brand-new user — chain the
         // feature tour before the app. Existing users never re-enter this path.
         setNeedsOnboarding(true);
@@ -161,7 +208,14 @@ export default function AppNavigator() {
   }
 
   if (user && needsOnboarding) {
-    return <OnboardingScreen onDone={() => setNeedsOnboarding(false)} />;
+    return (
+      <OnboardingScreen onDone={() => {
+        setNeedsOnboarding(false);
+        cachedPrefsRef.current = { ...cachedPrefsRef.current, hasOnboarded: true };
+        setCachedPrefs({ ...cachedPrefsRef.current });
+        setSessionPrefs({ hasOnboarded: true });
+      }} />
+    );
   }
 
   return (

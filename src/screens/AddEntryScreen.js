@@ -9,7 +9,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { addEntry, getEntries, getWines, updateEntry } from '../firebase/firestore';
+import { addEntry, getEntries, getUserProfile, saveUserProfile, updateEntry, refreshWineDashboardSnapshot } from '../firebase/firestore';
 import {
   FEEDBACK_TYPES,
   buildLogbookFeedbackComment,
@@ -240,23 +240,6 @@ export default function AddEntryScreen({ route, navigation }) {
     setSaving(true);
     const uid = auth.currentUser.uid;
 
-    // Offline-safe pre-count: if the user already has 2 entries, this create
-    // is the 3rd and may open the one-time logbook speed survey. Edits never count.
-    let shouldAskLogbookSurvey = false;
-    if (!isEditing) {
-      try {
-        const asked = await hasAskedFeedback(uid, FEEDBACK_TYPES.LOGBOOK_SPEED);
-        if (!asked) {
-          const wines = await getWines(uid);
-          const lists = await Promise.all(wines.map((w) => getEntries(uid, w.id)));
-          const total = lists.reduce((sum, list) => sum + list.length, 0);
-          shouldAskLogbookSurvey = total === 2;
-        }
-      } catch (e) {
-        reportError(e, { screen: 'AddEntry', action: 'checkLogbookSurvey' });
-      }
-    }
-
     // Don't await — write promises don't resolve until the backend
     // acknowledges the write, so awaiting would hang the UI indefinitely
     // while offline. The entry is written to the local cache immediately.
@@ -272,15 +255,50 @@ export default function AddEntryScreen({ route, navigation }) {
       });
     });
 
+    refreshWineDashboardSnapshot(uid, wine.id).catch((e) => {
+      reportError(e, { screen: 'AddEntry', action: 'refreshDashboardSnapshot' });
+    });
+
     if (!isEditing) track(EVENTS.ENTRY_ADDED, { type });
     setSaving(false);
-    if (!isEditing && type === 'sulfur') {
-      setPendingLogbookSurvey(shouldAskLogbookSurvey);
-      setShowReminder(true);
-    } else if (shouldAskLogbookSurvey) {
-      setShowLogbookSurvey(true);
-    } else {
+
+    if (isEditing) {
       navigation.goBack();
+      return;
+    }
+
+    // Survey decision is a profile read, never a cellar scan, and never blocks
+    // the write. SO₂ still shows the reminder first; the flag lands in the
+    // background before the winemaker usually dismisses it.
+    const decideSurvey = maybeAskLogbookSurvey(uid);
+
+    if (type === 'sulfur') {
+      decideSurvey.then((shouldAsk) => {
+        if (shouldAsk) setPendingLogbookSurvey(true);
+      });
+      setShowReminder(true);
+      return;
+    }
+
+    decideSurvey.then((shouldAsk) => {
+      if (shouldAsk) setShowLogbookSurvey(true);
+      else navigation.goBack();
+    });
+  };
+
+  const maybeAskLogbookSurvey = async (uid) => {
+    try {
+      const asked = await hasAskedFeedback(uid, FEEDBACK_TYPES.LOGBOOK_SPEED);
+      const profile = await getUserProfile(uid);
+      const count = profile?.logbookEntryCount ?? 0;
+      const shouldAsk = !asked && count === 2;
+      saveUserProfile(uid, { logbookEntryCount: count + 1 }).catch((e) => {
+        reportError(e, { screen: 'AddEntry', action: 'incrementEntryCount' });
+      });
+      return shouldAsk;
+    } catch (e) {
+      reportError(e, { screen: 'AddEntry', action: 'checkLogbookSurvey' });
+      return false;
     }
   };
 

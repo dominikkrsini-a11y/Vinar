@@ -296,6 +296,7 @@ export const translations = {
     wineSuggestion4:       'Any risk I should know about?',
     askingAbout:           'Asking about',
     errorMsg:              'Sorry, I could not connect. Please check your internet connection and try again.',
+    assistantCancel:       'Cancel',
 
     // Profile
     profileTitle:          'Profile',
@@ -637,6 +638,7 @@ export const translations = {
     wineSuggestion4:       'Ima li rizika koji bih trebao znati?',
     askingAbout:           'Pitate o',
     errorMsg:              'Žao nam je, nije moguće uspostaviti vezu. Provjerite internetsku vezu i pokušajte ponovo.',
+    assistantCancel:       'Odustani',
 
     // Profile
     profileTitle:          'Profil',
