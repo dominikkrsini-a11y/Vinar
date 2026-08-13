@@ -1,6 +1,7 @@
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './config';
+import { buildDashboardSnapshot } from '../utils/wineDashboardSnapshot';
 
 // Profile
 export const getUserProfile = async (userId) => {
@@ -62,6 +63,32 @@ export const getEntries = async (userId, wineId) => {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 };
 
+// Dashboard badges only need a short recent window (two densities, latest
+// SO₂/pH, last check date). Full history stays on Wine Detail.
+export const getRecentEntries = async (userId, wineId, limitCount = 10) => {
+  const ref = collection(db, 'users', userId, 'wines', wineId, 'entries');
+  const q = query(ref, orderBy('createdAt', 'desc'), limit(limitCount));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+};
+
+export const updateWine = async (uid, wineId, data) => {
+  const ref = doc(db, 'users', uid, 'wines', wineId);
+  await updateDoc(ref, data);
+};
+
+// Rebuild the denormalized dashboard map from the last 10 entries. Callers
+// must not await this on the cellar save path — the local cache updates
+// immediately and the write queues while offline.
+export const refreshWineDashboardSnapshot = async (userId, wineId) => {
+  const entries = await getRecentEntries(userId, wineId, 10);
+  const dashboard = buildDashboardSnapshot(entries);
+  await updateWine(userId, wineId, {
+    dashboard,
+    lastEntryAt: dashboard.lastEntryAt,
+  });
+};
+
 // Live logbook entries — same offline-first behavior as subscribeToWines.
 export const subscribeToEntries = (userId, wineId, onData, onError) => {
   const ref = collection(db, 'users', userId, 'wines', wineId, 'entries');
@@ -107,11 +134,6 @@ export const deleteListing = async (listingId) => {
 export const deleteWine = async (userId, wineId) => {
   const ref = doc(db, 'users', userId, 'wines', wineId);
   await deleteDoc(ref);
-};
-
-export const updateWine = async (uid, wineId, data) => {
-  const ref = doc(db, 'users', uid, 'wines', wineId);
-  await updateDoc(ref, data);
 };
 
 export const uploadImage = async (uri, storagePath) => {

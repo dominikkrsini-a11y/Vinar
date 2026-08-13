@@ -16,6 +16,7 @@ import { colors } from '../../theme/colors';
 import { t } from '../../i18n/translations';
 import { addListing, uploadImage } from '../../firebase/firestore';
 import { reportError } from '../../utils/reportError';
+import { track, EVENTS } from '../../services/analytics';
 import { pickImageFromLibrary, takePhotoWithCamera } from './imageHelpers';
 import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
 import { TextField } from '../../components/ui/TextField';
@@ -107,6 +108,7 @@ export function PostListingModal({
         imageUrl,
       });
 
+      track(EVENTS.LISTING_CREATED, { category, hasImage: Boolean(imageUrl) });
       resetForm();
       onClose?.();
       await onPosted?.();

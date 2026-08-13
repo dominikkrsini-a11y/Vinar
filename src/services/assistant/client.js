@@ -4,6 +4,21 @@ import { reportError } from '../../utils/reportError';
 
 const extra = Constants.expoConfig?.extra || {};
 
+export const ASSISTANT_CLIENT_TIMEOUT_MS = 30000;
+export const ASSISTANT_MAX_TURNS = 10;
+
+export function isAbortError(err) {
+  return err?.name === 'AbortError' || err?.name === 'TimeoutError';
+}
+
+// One turn is a user message plus the assistant reply, so 10 turns = 20 messages.
+export function lastAssistantTurns(messages, maxTurns = ASSISTANT_MAX_TURNS) {
+  if (!Array.isArray(messages)) return [];
+  const maxMessages = maxTurns * 2;
+  if (messages.length <= maxMessages) return messages;
+  return messages.slice(-maxMessages);
+}
+
 // app.config.js loads .env via dotenv and writes assistantBaseUrl into
 // Constants.expoConfig.extra — that is the canonical runtime source.
 // process.env.EXPO_PUBLIC_* is inlined at Metro bundle time and can stay
@@ -19,7 +34,7 @@ const getDefaultBaseUrl = () => {
 // set any of them. Only `messages` is sent, alongside a verified Firebase ID
 // token, which the server uses to look up the user's own wines/logbook data
 // to build the system prompt itself.
-export async function sendAssistantMessage({ baseUrl, messages }) {
+export async function sendAssistantMessage({ baseUrl, messages, signal } = {}) {
   const urlBase = baseUrl || getDefaultBaseUrl();
   const url = `${String(urlBase).replace(/\/+$/, '')}/api/assistant`;
 
@@ -36,35 +51,53 @@ export async function sendAssistantMessage({ baseUrl, messages }) {
     throw new Error('Could not verify your session. Please sign in again.');
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({ messages }),
-  });
+  const ownController = signal ? null : new AbortController();
+  const timeoutId = ownController
+    ? setTimeout(() => ownController.abort(), ASSISTANT_CLIENT_TIMEOUT_MS)
+    : null;
+  const fetchSignal = signal || ownController.signal;
 
-  let data;
   try {
-    data = await response.json();
-  } catch (e) {
-    reportError(e, { scope: 'assistantClient', action: 'parseJson', url });
-    let text = '';
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ messages }),
+      signal: fetchSignal,
+    });
+
+    let data;
     try {
-      text = await response.text();
-    } catch (e2) {
-      reportError(e2, { scope: 'assistantClient', action: 'readTextFallback', url });
+      data = await response.json();
+    } catch (e) {
+      reportError(e, { scope: 'assistantClient', action: 'parseJson', url });
+      let text = '';
+      try {
+        text = await response.text();
+      } catch (e2) {
+        reportError(e2, { scope: 'assistantClient', action: 'readTextFallback', url });
+      }
+      throw new Error(text || 'Invalid server response.');
     }
-    throw new Error(text || 'Invalid server response.');
-  }
 
-  if (!response.ok) {
-    const msg = data?.error?.message || `Request failed (${response.status}).`;
-    throw new Error(msg);
-  }
+    if (!response.ok) {
+      const msg = data?.error?.message || `Request failed (${response.status}).`;
+      throw new Error(msg);
+    }
 
-  return data;
+    return data;
+  } catch (e) {
+    if (isAbortError(e)) {
+      const err = new Error('Request cancelled.');
+      err.name = 'AbortError';
+      throw err;
+    }
+    throw e;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 export function getAssistantBaseUrl() {

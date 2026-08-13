@@ -10,6 +10,7 @@ import { addWine } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
+import { track, EVENTS } from '../services/analytics';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { TextField } from '../components/ui/TextField';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
@@ -79,6 +80,7 @@ export default function AddWineScreen({ navigation }) {
     }).catch((e) => {
       reportError(e, { screen: 'AddWine', action: 'addWine' });
     });
+    track(EVENTS.WINE_ADDED, { type });
     setSaving(false);
     Alert.alert(t(language, 'done'), t(language, 'wineAdded'), [
       { text: t(language, 'ok'), onPress: () => navigation.goBack() }

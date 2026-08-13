@@ -8,7 +8,8 @@ import {
   markFeedbackAsked,
   submitFeedback,
 } from '../../firebase/feedback';
-import { getAssistantBaseUrl, sendAssistantMessage } from '../../services/assistant/client';
+import { getAssistantBaseUrl, sendAssistantMessage, lastAssistantTurns, isAbortError } from '../../services/assistant/client';
+import { track, EVENTS } from '../../services/analytics';
 import { reportError } from '../../utils/reportError';
 import { buildUserContent } from './buildUserContent';
 import { captureCameraImage } from './camera';
@@ -26,6 +27,8 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
   // Session-local gate so a second successful reply in the same session cannot
   // re-open the survey before the profile write lands.
   const assistantSurveyAskedRef = useRef(false);
+  const abortRef = useRef(null);
+  const cancelledRef = useRef(false);
   const assistantBaseUrl = getAssistantBaseUrl();
 
   useEffect(() => {
@@ -66,6 +69,12 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
     if (asset) setPendingImage(asset);
   };
 
+  const cancelMessage = () => {
+    cancelledRef.current = true;
+    abortRef.current?.abort();
+    setLoading(false);
+  };
+
   const sendMessage = async () => {
     if ((!input.trim() && !pendingImage) || loading) return;
 
@@ -83,24 +92,37 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
     setInput('');
     setPendingImage(null);
     setLoading(true);
+    cancelledRef.current = false;
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      const apiMessages = newMessages.map((msg) => ({
+      const apiMessages = lastAssistantTurns(newMessages.map((msg) => ({
         role: msg.role,
         content: msg.content,
-      }));
+      })));
 
       // system/model/max_tokens are no longer sent — the server owns all
       // three (see server/routes/assistant.js).
       const data = await sendAssistantMessage({
         baseUrl: assistantBaseUrl,
         messages: apiMessages,
+        signal: controller.signal,
       });
+
+      if (cancelledRef.current) return;
 
       setMessages((prev) => [...prev, {
         role: 'assistant',
         content: [{ type: 'text', text: data.content[0].text }],
       }]);
+
+      track(EVENTS.ASSISTANT_MESSAGE_SENT, {
+        hasImage: Boolean(displayImage),
+        aboutWine: Boolean(focusWine),
+      });
 
       // First successful reply only — error bubbles in catch must not trigger this.
       if (!assistantSurveyAskedRef.current) {
@@ -108,6 +130,23 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
         setShowAssistantSurvey(true);
       }
     } catch (e) {
+      if (cancelledRef.current) return;
+      if (isAbortError(e)) {
+        // Timed out — leave the user message, tell them it did not finish.
+        setMessages((prev) => [...prev, {
+          role: 'assistant',
+          content: [{ type: 'text', text: t(language, 'errorMsg') }],
+        }]);
+        reportError(e, { screen: 'Assistant', action: 'sendMessageTimeout', assistantBaseUrl });
+        Alert.alert(
+          language === 'hr' ? 'Greška' : 'Error',
+          language === 'hr'
+            ? 'Zahtjev je predugo trajao. Pokušajte ponovno.'
+            : 'The request took too long. Please try again.'
+        );
+        return;
+      }
+
       setMessages((prev) => [...prev, {
         role: 'assistant',
         content: [{ type: 'text', text: t(language, 'errorMsg') }],
@@ -121,6 +160,8 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
           : 'Could not reach the assistant right now. Please try again later.'
       );
     } finally {
+      clearTimeout(timeoutId);
+      if (abortRef.current === controller) abortRef.current = null;
       setLoading(false);
     }
   };
@@ -159,6 +200,7 @@ export function useAssistantOrchestrator({ language, t, focusWine }) {
     setPendingImage,
     handleCamera,
     sendMessage,
+    cancelMessage,
     showAssistantSurvey,
     onAssistantSurveySubmit,
     onAssistantSurveyDismiss,

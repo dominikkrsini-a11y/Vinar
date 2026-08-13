@@ -3,6 +3,7 @@ import { colors } from '../theme/colors';
 import { saveUserProfile } from '../firebase/firestore';
 import { auth } from '../firebase/config';
 import { reportError } from '../utils/reportError';
+import { track, EVENTS } from '../services/analytics';
 
 export default function LanguageSelectScreen({ onLanguageSelected }) {
   const handleSelect = async (lang) => {
@@ -12,6 +13,7 @@ export default function LanguageSelectScreen({ onLanguageSelected }) {
       reportError(e, { screen: 'LanguageSelect', action: 'saveLanguage', lang });
       Alert.alert('Error', 'Could not save language preference.');
     }
+    track(EVENTS.LANGUAGE_SELECTED, { language: lang });
     onLanguageSelected(lang);
   };
 

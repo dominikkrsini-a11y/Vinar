@@ -4,6 +4,17 @@ export const translations = {
     selectLanguage:        'Choose your language',
     selectLanguageSub:     'You can change this later in Profile',
 
+    // Onboarding
+    onboardingTitle1:      'Your cellar logbook',
+    onboardingSub1:        'Track every wine — fermentation, sulfur, racking, and measurements. Works offline in the cellar and syncs later.',
+    onboardingTitle2:      'Winemaking calculators',
+    onboardingSub2:        'ABV from specific gravity and precise SO₂ dosing, temperature corrected — save results straight to the logbook.',
+    onboardingTitle3:      'AI winemaking assistant',
+    onboardingSub3:        'Ask anything about your wines. The assistant knows your logbook and answers like an enologist.',
+    onboardingSkip:        'Skip',
+    onboardingNext:        'Next',
+    onboardingDone:        'Get started',
+
     // Login
     appName:               'Vinar',
     appSubtitle:           'Winemaker\'s Assistant',
@@ -33,6 +44,7 @@ export const translations = {
     marketplaceSub:        'Listings and suppliers',
     noWinesTitle:          'No wines yet',
     noWinesSub:            'Add your first wine to start keeping a logbook.',
+    noWinesCta:            'Add your first wine',
 
     // Add Wine
     addWineTitle:          'Add Wine',
@@ -206,6 +218,8 @@ export const translations = {
     productBlend:          'Blend powder',
     productCampden:        'Campden tablets',
     productLiquid:         'Liquid SO₂',
+    shareResult:           'Share result',
+    shareFooter:           'Calculated with Vinar — the winemaker\'s assistant · vinar.app',
 
     // Reference
     reference:             'Reference',
@@ -282,6 +296,7 @@ export const translations = {
     wineSuggestion4:       'Any risk I should know about?',
     askingAbout:           'Asking about',
     errorMsg:              'Sorry, I could not connect. Please check your internet connection and try again.',
+    assistantCancel:       'Cancel',
 
     // Profile
     profileTitle:          'Profile',
@@ -331,6 +346,17 @@ export const translations = {
     selectLanguage:        'Odaberite jezik',
     selectLanguageSub:     'Možete promijeniti kasnije u Profilu',
 
+    // Onboarding
+    onboardingTitle1:      'Vaš podrumski dnevnik',
+    onboardingSub1:        'Pratite svako vino — vrenje, sumporenje, pretok i mjerenja. Radi offline u podrumu i sinkronizira se kasnije.',
+    onboardingTitle2:      'Vinarski kalkulatori',
+    onboardingSub2:        'ABV iz specifične gustoće i precizno doziranje SO₂, korigirano za temperaturu — rezultate spremite ravno u dnevnik.',
+    onboardingTitle3:      'AI asistent za vinarstvo',
+    onboardingSub3:        'Pitajte bilo što o svojim vinima. Asistent poznaje vaš dnevnik i odgovara poput enologa.',
+    onboardingSkip:        'Preskoči',
+    onboardingNext:        'Dalje',
+    onboardingDone:        'Započnite',
+
     // Login
     appName:               'Vinar',
     appSubtitle:           'Asistent za vinare',
@@ -360,6 +386,7 @@ export const translations = {
     marketplaceSub:        'Oglasi i dobavljači',
     noWinesTitle:          'Još nema vina',
     noWinesSub:            'Dodajte prvo vino i počnite voditi dnevnik.',
+    noWinesCta:            'Dodajte svoje prvo vino',
 
     // Add Wine
     addWineTitle:          'Dodaj Vino',
@@ -533,6 +560,8 @@ export const translations = {
     productBlend:          'Sumporni prah (mješavina)',
     productCampden:        'Campden tablete',
     productLiquid:         'Tekući SO₂',
+    shareResult:           'Podijeli rezultat',
+    shareFooter:           'Izračunato u aplikaciji Vinar — asistent za vinare · vinar.app',
 
     // Reference
     reference:             'Referentne tablice',
@@ -609,6 +638,7 @@ export const translations = {
     wineSuggestion4:       'Ima li rizika koji bih trebao znati?',
     askingAbout:           'Pitate o',
     errorMsg:              'Žao nam je, nije moguće uspostaviti vezu. Provjerite internetsku vezu i pokušajte ponovo.',
+    assistantCancel:       'Odustani',
 
     // Profile
     profileTitle:          'Profil',
