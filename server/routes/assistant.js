@@ -97,14 +97,17 @@ router.post('/', requireAuth, requireWithinRateLimit, async (req, res) => {
     });
   }
 
-  const { messages } = body;
+  const { messages: rawMessages } = body;
 
-  if (!Array.isArray(messages) || messages.length < 1 || messages.length > 50) {
+  if (!Array.isArray(rawMessages) || rawMessages.length < 1 || rawMessages.length > 50) {
     return res.status(400).json({ error: { message: 'Invalid messages.' } });
   }
-  if (!messages.every(isValidMessage)) {
+  if (!rawMessages.every(isValidMessage)) {
     return res.status(400).json({ error: { message: 'Invalid message shape.' } });
   }
+
+  // Cap history so a long thread cannot dump 50 turns into the model.
+  const messages = rawMessages.slice(-20);
 
   try {
     const usage = await checkAndIncrementDailyUsage(req.uid);

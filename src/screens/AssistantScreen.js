@@ -33,6 +33,7 @@ export default function AssistantScreen({ route, navigation }) {
     setPendingImage,
     handleCamera,
     sendMessage,
+    cancelMessage,
     showAssistantSurvey,
     onAssistantSurveySubmit,
     onAssistantSurveyDismiss,
@@ -106,6 +107,7 @@ export default function AssistantScreen({ route, navigation }) {
           loading={loading}
           onPressCamera={handleCamera}
           onPressSend={sendMessage}
+          onPressCancel={cancelMessage}
         />
 
         <FeedbackSurveyModal
