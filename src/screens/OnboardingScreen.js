@@ -10,6 +10,7 @@ import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
 import { track, EVENTS } from '../services/analytics';
+import { setSessionPrefs } from '../services/sessionCache';
 
 // Shown once, right after registration (language select → onboarding → app).
 // Three slides — one per killer feature — so a new winemaker knows what to do
@@ -33,6 +34,7 @@ export default function OnboardingScreen({ onDone }) {
     saveUserProfile(auth.currentUser.uid, { hasOnboarded: true }).catch((e) => {
       reportError(e, { screen: 'Onboarding', action: 'saveHasOnboarded' });
     });
+    setSessionPrefs({ hasOnboarded: true });
     if (completed) track(EVENTS.ONBOARDING_COMPLETED);
     onDone();
   };

@@ -1,4 +1,16 @@
-import { lastAssistantTurns, isAbortError } from '../client';
+import { lastAssistantTurns, isAbortError, sendAssistantMessage } from '../client';
+
+jest.mock('expo-constants', () => ({
+  expoConfig: { extra: { assistantBaseUrl: 'http://localhost:3001' } },
+}));
+
+jest.mock('../../../firebase/config', () => ({
+  auth: { currentUser: { uid: 'u1', getIdToken: async () => 'token' } },
+}));
+
+jest.mock('../../../utils/reportError', () => ({
+  reportError: jest.fn(),
+}));
 
 describe('lastAssistantTurns', () => {
   test('returns empty for a non-array', () => {
@@ -31,5 +43,20 @@ describe('isAbortError', () => {
     expect(isAbortError({ name: 'TimeoutError' })).toBe(true);
     expect(isAbortError({ name: 'TypeError' })).toBe(false);
     expect(isAbortError(null)).toBe(false);
+  });
+});
+
+describe('sendAssistantMessage abort', () => {
+  test('maps fetch AbortError to a named AbortError', async () => {
+    const abortErr = new Error('aborted');
+    abortErr.name = 'AbortError';
+    global.fetch = jest.fn(() => Promise.reject(abortErr));
+
+    await expect(
+      sendAssistantMessage({
+        messages: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }],
+        signal: { aborted: false },
+      })
+    ).rejects.toMatchObject({ name: 'AbortError', message: 'Request cancelled.' });
   });
 });
