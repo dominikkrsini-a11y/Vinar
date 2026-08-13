@@ -9,7 +9,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { addEntry, getEntries, getWines, updateEntry } from '../firebase/firestore';
+import { addEntry, getEntries, getWines, updateEntry, refreshWineDashboardSnapshot } from '../firebase/firestore';
 import {
   FEEDBACK_TYPES,
   buildLogbookFeedbackComment,
@@ -270,6 +270,10 @@ export default function AddEntryScreen({ route, navigation }) {
         action: isEditing ? 'updateEntry' : 'saveEntry',
         type,
       });
+    });
+
+    refreshWineDashboardSnapshot(uid, wine.id).catch((e) => {
+      reportError(e, { screen: 'AddEntry', action: 'refreshDashboardSnapshot' });
     });
 
     if (!isEditing) track(EVENTS.ENTRY_ADDED, { type });

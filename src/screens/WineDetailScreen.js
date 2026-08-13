@@ -8,7 +8,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { subscribeToEntries, deleteWine, deleteEntry } from '../firebase/firestore';
+import { subscribeToEntries, deleteWine, deleteEntry, refreshWineDashboardSnapshot } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
@@ -154,9 +154,11 @@ export default function WineDetailScreen({ route, navigation }) {
             // Don't await — the live entries subscription above already
             // reflects the deletion via the local cache; awaiting the
             // promise would hang offline until the write reaches the server.
-            deleteEntry(auth.currentUser.uid, wine.id, entry.id).catch((e) => {
-              reportError(e, { screen: 'WineDetail', action: 'deleteEntry' });
-            });
+            deleteEntry(auth.currentUser.uid, wine.id, entry.id)
+              .then(() => refreshWineDashboardSnapshot(auth.currentUser.uid, wine.id))
+              .catch((e) => {
+                reportError(e, { screen: 'WineDetail', action: 'deleteEntry' });
+              });
           },
         },
       ]

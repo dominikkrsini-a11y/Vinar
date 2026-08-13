@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext } from 'react';
+import { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Modal, Alert,
@@ -6,12 +6,13 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
-import { getUserProfile, getEntries, subscribeToWines } from '../firebase/firestore';
+import { getUserProfile, getRecentEntries, subscribeToWines, refreshWineDashboardSnapshot } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
 import { getWineStatus, STATUS_TONES } from '../utils/wineStatus';
 import { formatDaysAgo } from '../utils/dates';
+import { hasDashboardSnapshot, statusEntriesForWine } from '../utils/wineDashboardSnapshot';
 
 export default function DashboardScreen({ navigation }) {
   const [profile,         setProfile]         = useState(null);
@@ -20,29 +21,14 @@ export default function DashboardScreen({ navigation }) {
   const [showWinePicker,  setShowWinePicker]  = useState(false);
   const [entriesByWine,   setEntriesByWine]   = useState({});
   const { language } = useContext(LanguageContext);
+  const fetchGenRef = useRef(0);
 
-  // Live wines list — serves cached data immediately offline and updates
-  // automatically as wines are added/edited/deleted (including once queued
-  // offline writes sync back to the server).
+  // Live wines list — paint immediately from the cache, then backfill badges
+  // only for wines that do not yet have a denormalized dashboard snapshot.
   useEffect(() => {
     const uid = auth.currentUser.uid;
-    const unsubscribe = subscribeToWines(uid, async (winesData) => {
+    const unsubscribe = subscribeToWines(uid, (winesData) => {
       setWines(winesData);
-      try {
-        // These entries were already being read to count them; keeping them lets
-        // each card show a status without any extra Firestore reads.
-        const lists = await Promise.all(
-          winesData.map(w => getEntries(uid, w.id))
-        );
-        setEntriesByWine(
-          winesData.reduce((acc, w, i) => {
-            acc[w.id] = lists[i];
-            return acc;
-          }, {})
-        );
-      } catch (e) {
-        reportError(e, { screen: 'Dashboard', action: 'loadEntryCounts' });
-      }
       setLoading(false);
     }, (e) => {
       reportError(e, { screen: 'Dashboard', action: 'subscribeToWines' });
@@ -58,28 +44,44 @@ export default function DashboardScreen({ navigation }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional — subscribe once for the screen's lifetime
   }, []);
 
+  useEffect(() => {
+    const missing = wines.filter((w) => !hasDashboardSnapshot(w));
+    if (missing.length === 0) return undefined;
+
+    const uid = auth.currentUser?.uid;
+    if (!uid) return undefined;
+
+    const gen = ++fetchGenRef.current;
+    Promise.all(missing.map((w) => getRecentEntries(uid, w.id, 10)))
+      .then((lists) => {
+        if (gen !== fetchGenRef.current) return;
+        setEntriesByWine((prev) => {
+          const next = { ...prev };
+          missing.forEach((w, i) => {
+            next[w.id] = lists[i];
+          });
+          return next;
+        });
+        missing.forEach((w) => {
+          refreshWineDashboardSnapshot(uid, w.id).catch((e) => {
+            reportError(e, { screen: 'Dashboard', action: 'backfillSnapshot', wineId: w.id });
+          });
+        });
+      })
+      .catch((e) => {
+        if (gen !== fetchGenRef.current) return;
+        reportError(e, { screen: 'Dashboard', action: 'loadRecentEntries' });
+      });
+    return undefined;
+  }, [wines]);
+
   useFocusEffect(
     useCallback(() => {
       const uid = auth.currentUser.uid;
       getUserProfile(uid)
         .then(setProfile)
         .catch((e) => reportError(e, { screen: 'Dashboard', action: 'loadProfile' }));
-
-      // Reload entries on focus so badges refresh after AddEntry / WineDetail edits.
-      // Wines list stays live via subscribeToWines; entries need an explicit refetch.
-      if (wines.length > 0) {
-        Promise.all(wines.map((w) => getEntries(uid, w.id)))
-          .then((lists) => {
-            setEntriesByWine(
-              wines.reduce((acc, w, i) => {
-                acc[w.id] = lists[i];
-                return acc;
-              }, {})
-            );
-          })
-          .catch((e) => reportError(e, { screen: 'Dashboard', action: 'reloadEntries' }));
-      }
-    }, [wines])
+    }, [])
   );
 
   const handleLogbook = () => {
@@ -106,7 +108,12 @@ export default function DashboardScreen({ navigation }) {
 
   const firstName  = profile?.firstName || '';
   const wineryName = profile?.wineryName || '';
-  const entryCount = Object.values(entriesByWine).reduce((sum, list) => sum + list.length, 0);
+  const entryCount = wines.reduce((sum, wine) => {
+    if (hasDashboardSnapshot(wine)) {
+      return sum + (wine.dashboard.lastEntryAt ? 1 : 0);
+    }
+    return sum + (entriesByWine[wine.id]?.length || 0);
+  }, 0);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -167,7 +174,7 @@ export default function DashboardScreen({ navigation }) {
         <>
           <Text style={styles.sectionTitle}>{t(language, 'yourWines')}</Text>
           {wines.map(wine => {
-            const status = getWineStatus(wine, entriesByWine[wine.id]);
+            const status = getWineStatus(wine, statusEntriesForWine(wine, entriesByWine[wine.id]));
             const tone = STATUS_TONES[status.tone];
             return (
               <TouchableOpacity
