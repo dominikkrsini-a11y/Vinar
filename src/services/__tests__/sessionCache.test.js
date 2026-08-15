@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSessionPrefs, setSessionPrefs } from '../sessionCache';
+import { getSessionPrefs, isValidLanguage, resolveLanguageGate, setSessionPrefs } from '../sessionCache';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(),
@@ -44,5 +44,40 @@ describe('sessionCache', () => {
       'vinar.sessionPrefs',
       JSON.stringify({ language: 'hr', hasOnboarded: true })
     );
+  });
+
+  test('isValidLanguage accepts only en and hr', () => {
+    expect(isValidLanguage('en')).toBe(true);
+    expect(isValidLanguage('hr')).toBe(true);
+    expect(isValidLanguage(null)).toBe(false);
+    expect(isValidLanguage('')).toBe(false);
+    expect(isValidLanguage('de')).toBe(false);
+  });
+
+  test('resolveLanguageGate prefers a valid profile language', () => {
+    expect(resolveLanguageGate({ profileLanguage: 'en', cachedLanguage: 'hr' })).toEqual({
+      language: 'en',
+      needsLang: false,
+      source: 'profile',
+    });
+  });
+
+  test('resolveLanguageGate falls back to a trustworthy cache when profile has no language', () => {
+    expect(resolveLanguageGate({ profileLanguage: null, cachedLanguage: 'hr' })).toEqual({
+      language: 'hr',
+      needsLang: false,
+      source: 'cache',
+    });
+    expect(resolveLanguageGate({ profileLanguage: '', cachedLanguage: 'en' }).source).toBe('cache');
+  });
+
+  test('resolveLanguageGate requires language selection when neither source is valid', () => {
+    expect(resolveLanguageGate({ profileLanguage: null, cachedLanguage: undefined })).toEqual({
+      language: null,
+      needsLang: true,
+      source: null,
+    });
+    expect(resolveLanguageGate({ profileLanguage: 'de', cachedLanguage: 'xx' }).needsLang).toBe(true);
+    expect(resolveLanguageGate({}).needsLang).toBe(true);
   });
 });

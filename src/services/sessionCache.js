@@ -2,11 +2,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY = 'vinar.sessionPrefs';
 
+export function isValidLanguage(value) {
+  return value === 'en' || value === 'hr';
+}
+
+// After every profile attempt (success or failure), pick a language from the
+// profile first, then from a trustworthy cache. Anything else needs the picker.
+export function resolveLanguageGate({ profileLanguage, cachedLanguage } = {}) {
+  if (isValidLanguage(profileLanguage)) {
+    return { language: profileLanguage, needsLang: false, source: 'profile' };
+  }
+  if (isValidLanguage(cachedLanguage)) {
+    return { language: cachedLanguage, needsLang: false, source: 'cache' };
+  }
+  return { language: null, needsLang: true, source: null };
+}
+
 function normalizePrefs(parsed) {
   if (!parsed || typeof parsed !== 'object') return {};
-  const language = parsed.language === 'en' || parsed.language === 'hr'
-    ? parsed.language
-    : undefined;
+  const language = isValidLanguage(parsed.language) ? parsed.language : undefined;
   const hasOnboarded = typeof parsed.hasOnboarded === 'boolean'
     ? parsed.hasOnboarded
     : undefined;
