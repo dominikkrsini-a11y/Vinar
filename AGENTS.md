@@ -4,7 +4,9 @@
 
 Vinar is an **Expo / React Native mobile app** (repo root) plus a small **Node/Express "assistant proxy" server** (`server/`) that talks to Anthropic. Firebase (Auth + Firestore + Storage) is an external managed backend — there is no local emulator configured.
 
-Cloud Agents use a **Dockerfile-based Build** (see [`.cursor/environment.json`](.cursor/environment.json) + [`.cursor/Dockerfile`](.cursor/Dockerfile)). The Build `install` step runs `npm ci` at the repo root and `npm ci --prefix server` (each tree has its own lockfile). Do not put `expo start`, `npm run dev`, or other long-running servers in `install`.
+Cloud Agents use a **Dockerfile-based Build** (see [`.cursor/environment.json`](.cursor/environment.json) + [`.cursor/Dockerfile`](.cursor/Dockerfile)). The image is Node 22 (bookworm) plus `git`/`sudo`/`tmux`/`openssl`. The Build `install` step runs `npm ci` at the repo root and `npm ci --prefix server` (each tree has its own lockfile). Do not put `expo start`, `npm run dev`, or other long-running servers in `install`.
+
+`terminals.assistant-proxy` runs [`scripts/cloud-agent-assistant.sh`](scripts/cloud-agent-assistant.sh) on port 3001. That wrapper uses injected Cloud Agent secrets when they are present; if they are missing it generates a throwaway RSA key so the process can bind and `GET /healthz` works. `POST /api/assistant` still needs a genuine Anthropic key and Firebase service account.
 
 ### Services
 
@@ -21,7 +23,7 @@ Cloud Agents use a **Dockerfile-based Build** (see [`.cursor/environment.json`](
 
 ### Environment variables (non-obvious gotchas)
 - `.env` files are git-ignored. Templates: `.env.example` (root, `EXPO_PUBLIC_*`) and `server/.env.example` (server). Copy and fill them from injected cloud secrets when present.
-- `server/config.js` runs `validateEnv()` **at import time** and `process.exit(1)` if `ANTHROPIC_API_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, or `FIREBASE_PRIVATE_KEY` are missing — it also rejects values that still look like the placeholders (matching `xxxxx` or `your-`/`your_`). `FIREBASE_PRIVATE_KEY` must be a real PEM (literal `\n` sequences are converted to newlines at boot), so for local-only boot you can generate a throwaway RSA key; the server starts and `/healthz` works, but the real `/api/assistant` happy path needs a genuine Anthropic key + a real Firebase service account (token verification and Firestore writes hit Google).
+- `server/config.js` runs `validateEnv()` **at import time** and `process.exit(1)` if `ANTHROPIC_API_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, or `FIREBASE_PRIVATE_KEY` are missing — it also rejects values that still look like the placeholders (matching `xxxxx` or `your-`/`your_`). `FIREBASE_PRIVATE_KEY` must be a real PEM (literal `\n` sequences are converted to newlines at boot). The Cloud Agent assistant terminal already does the throwaway-key fallback; `/healthz` then works, but the real `/api/assistant` happy path needs a genuine Anthropic key + a real Firebase service account (token verification and Firestore writes hit Google).
 - `UPSTASH_*` and both `SENTRY_DSN`s are optional; unset just disables rate limiting / crash reporting.
 - The app defaults `EXPO_PUBLIC_ASSISTANT_BASE_URL` to `http://localhost:3001` in dev.
 - Secrets inject at agent **boot**. A long-running session will not see secrets added mid-run until a new agent starts.
