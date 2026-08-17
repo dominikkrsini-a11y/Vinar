@@ -16,7 +16,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.danilo1.vinar"
+      "bundleIdentifier": "com.danilo1.vinar",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Vinar uses the camera to photograph wines, cellar notes, and marketplace listings.",
+        "NSPhotoLibraryUsageDescription": "Vinar uses your photo library for a profile picture and marketplace listing photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
