@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vinar — Politika privatnosti</title>
+  <meta name="description" content="Politika privatnosti aplikacije Vinar — koje podatke prikupljamo, zašto, i kako ih obrisati." />
+  <style>
+    :root {
+      --bg: #180d0d;
+      --surface: #2a1010;
+      --border: #3a1717;
+      --gold: #c9a84c;
+      --text: #f3e8d6;
+      --muted: #b8b0b0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+    }
+    .container { max-width: 720px; margin: 0 auto; padding: 0 24px 64px; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0;
+    }
+    .brand {
+      font-size: 22px; font-weight: 700; color: var(--gold);
+      letter-spacing: 0.5px; text-decoration: none;
+    }
+    .lang-toggle {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      display: flex; overflow: hidden;
+    }
+    .lang-toggle button {
+      background: none; border: none; color: var(--muted); font-size: 13px;
+      padding: 6px 14px; cursor: pointer; font-weight: 600;
+    }
+    .lang-toggle button.active { background: var(--gold); color: var(--bg); }
+    h1 { color: var(--gold); font-size: 28px; margin: 32px 0 8px; }
+    .updated { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+    h2 { color: var(--gold); font-size: 18px; margin: 28px 0 8px; }
+    p, li { color: var(--muted); font-size: 15px; }
+    ul { padding-left: 20px; margin: 8px 0 16px; }
+    li { margin: 4px 0; }
+    a { color: var(--gold); }
+    footer {
+      border-top: 1px solid var(--border); margin-top: 48px; padding: 28px 0 8px;
+      color: var(--muted); font-size: 13px; text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a class="brand" href="index.html">Vinar</a>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button id="btn-hr" class="active" onclick="setLang('hr')">HR</button>
+        <button id="btn-en" onclick="setLang('en')">EN</button>
+      </div>
+    </header>
+
+    <h1 data-hr="Politika privatnosti" data-en="Privacy policy"></h1>
+    <p class="updated" data-hr="Zadnje ažuriranje: 17. kolovoza 2026." data-en="Last updated: 17 August 2026."></p>
+
+    <p data-hr="Vinar je mobilna aplikacija za male proizvođače vina (dnevnik podruma, kalkulatori i AI asistent). Ova stranica objašnjava koje podatke prikupljamo i kako ih možete obrisati."
+       data-en="Vinar is a mobile app for small wine producers (cellar logbook, calculators, and an AI assistant). This page explains what data we collect and how you can delete it."></p>
+
+    <h2 data-hr="Koje podatke prikupljamo" data-en="What we collect"></h2>
+    <ul>
+      <li data-hr="Račun: e-mail adresa i lozinka (lozinku čuva Firebase Authentication, ne mi u čitljivom obliku)."
+          data-en="Account: email address and password (Firebase Authentication stores the password; we never see it in readable form)."></li>
+      <li data-hr="Profil: ime, prezime, naziv vinarije, telefon, regija, fotografija, odabrani jezik."
+          data-en="Profile: name, winery name, phone, region, photo, and chosen language."></li>
+      <li data-hr="Podrumski dnevnik: vina, unosi (vrenje, SO₂, pretoci, mjerenja, bilješke) i izvezeni PDF-ovi koje vi napravite."
+          data-en="Cellar logbook: wines, entries (fermentation, SO₂, racking, readings, notes), and PDFs you export."></li>
+      <li data-hr="Tržnica: oglasi koje objavite, uključujući slike i kontakt koji odaberete pokazati."
+          data-en="Marketplace: listings you post, including images and any contact details you choose to show."></li>
+      <li data-hr="Analitika: događaji korištenja (npr. dodano vino, korišten kalkulator) vezani uz ID korisnika, bez oglasa i bez praćenja na drugim aplikacijama."
+          data-en="Analytics: usage events (for example wine added, calculator used) tied to a user id — no ads and no tracking across other apps."></li>
+      <li data-hr="AI asistent: poruke koje pošaljete idu na naš poslužitelj (i dalje prema Anthropicu) zajedno s kontekstom iz vašeg dnevnika, da odgovor bude konkretan."
+          data-en="AI assistant: messages you send go to our server (and on to Anthropic) together with context from your logbook so answers can be specific."></li>
+    </ul>
+
+    <h2 data-hr="Zašto" data-en="Why"></h2>
+    <p data-hr="Da biste se prijavili, vodili dnevnik, koristili kalkulatore i asistenta, i objavljivali oglase. Ne prodajemo vaše podatke. Ne koristimo ih za oglašavanje."
+       data-en="So you can sign in, keep a logbook, use the calculators and assistant, and post listings. We do not sell your data. We do not use it for advertising."></p>
+
+    <h2 data-hr="Kako obrisati račun" data-en="How to delete your account"></h2>
+    <p data-hr="U aplikaciji: Profil → Obriši račun. Time se briše Firebase račun, profil, vina, unosi dnevnika i vaši oglasi. Analitički događaji i eventualne slike u pohrani mogu ostati dok ih ručno ne očistimo. Za brisanje pišite na hello@vinar.app."
+       data-en="In the app: Profile → Delete account. That removes your Firebase account, profile, wines, logbook entries, and your listings. Analytics events and leftover storage images may remain until we purge them. Email hello@vinar.app to request a full wipe."></p>
+
+    <h2 data-hr="Djeca" data-en="Children"></h2>
+    <p data-hr="Vinar nije namijenjen osobama mlađim od 16 godina."
+       data-en="Vinar is not intended for anyone under 16."></p>
+
+    <h2 data-hr="Kontakt" data-en="Contact"></h2>
+    <p data-hr="Pitanja o privatnosti: hello@vinar.app"
+       data-en="Privacy questions: hello@vinar.app"></p>
+
+    <footer>
+      <a href="index.html" data-hr="← Natrag na Vinar" data-en="← Back to Vinar"></a>
+    </footer>
+  </div>
+  <script>
+    function setLang(lang) {
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-hr]').forEach(function (el) {
+        el.textContent = el.getAttribute('data-' + lang);
+      });
+      document.getElementById('btn-hr').classList.toggle('active', lang === 'hr');
+      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      document.title = lang === 'hr' ? 'Vinar — Politika privatnosti' : 'Vinar — Privacy policy';
+    }
+    setLang('hr');
+  </script>
+</body>
+</html>

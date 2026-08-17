@@ -139,6 +139,6 @@ Built for family wineries and small producers — simple, bilingual (Croatian an
 ## Still required before submission (owner action)
 
 - Apple Developer / Google Play developer accounts and `eas submit` credentials (`eas.json` `submit.production` is empty).
-- A public **privacy policy URL** — both stores require one for apps with accounts. The landing page (`web/index.html`) is a natural place to host it.
+- A public **privacy policy URL** — host [`web/privacy.html`](../web/privacy.html) next to the landing page (same static host) and paste that URL into App Store Connect and Play Console.
 - Store screenshots (6.5" + 5.5" iPhone, 12.9" iPad if `supportsTablet` stays true; phone + 7"/10" tablet for Play).
 - Data-safety / privacy questionnaires: the app collects email (auth), user content (wines, logbook, listings), and analytics events tied to a user id.
