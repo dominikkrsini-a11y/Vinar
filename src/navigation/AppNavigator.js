@@ -10,7 +10,7 @@ import { getUserProfile } from '../firebase/firestore';
 import { LanguageContext } from '../context/LanguageContext';
 import { reportError } from '../utils/reportError';
 import { trackScreenView } from '../services/analytics';
-import { getSessionPrefs, setSessionPrefs } from '../services/sessionCache';
+import { getSessionPrefs, setSessionPrefs, isValidLanguage, resolveLanguageGate } from '../services/sessionCache';
 import { OfflineBanner } from '../components/ui/OfflineBanner';
 
 import LoginScreen       from '../screens/LoginScreen';
@@ -119,7 +119,7 @@ export default function AppNavigator() {
     getSessionPrefs().then((prefs) => {
       if (cancelled) return;
       cachedPrefsRef.current = prefs;
-      if (prefs.language) setLanguage(prefs.language);
+      if (isValidLanguage(prefs.language)) setLanguage(prefs.language);
       setCachedPrefs(prefs);
     });
     return () => { cancelled = true; };
@@ -139,43 +139,45 @@ export default function AppNavigator() {
         return;
       }
       const cache = cachedPrefsRef.current;
-      if (cache.language) {
+      if (isValidLanguage(cache.language)) {
         setLanguage(cache.language);
-        setNeedsLang(false);
-        setNeedsOnboarding(cache.hasOnboarded === false);
         setCheckingLang(false);
       } else {
         setCheckingLang(true);
       }
+
+      let profile = null;
       try {
-        const profile = await getUserProfile(u.uid);
-        if (profile?.language) {
-          setLanguage(profile.language);
-          setNeedsLang(false);
+        profile = await getUserProfile(u.uid);
+      } catch (e) {
+        reportError(e, { screen: 'AppNavigator', action: 'getUserProfileLanguage' });
+      }
+
+      // Re-evaluate after every attempt — success, empty profile, or failure.
+      const gate = resolveLanguageGate({
+        profileLanguage: profile?.language,
+        cachedLanguage: cache.language,
+      });
+
+      if (gate.needsLang) {
+        setNeedsLang(true);
+        setNeedsOnboarding(false);
+      } else {
+        setLanguage(gate.language);
+        setNeedsLang(false);
+        if (gate.source === 'profile') {
           // Existing users predate hasOnboarded — missing means already in the app.
           const onboarded = profile.hasOnboarded !== false;
-          const nextPrefs = { language: profile.language, hasOnboarded: onboarded };
+          const nextPrefs = { language: gate.language, hasOnboarded: onboarded };
           cachedPrefsRef.current = nextPrefs;
           setCachedPrefs(nextPrefs);
           setSessionPrefs(nextPrefs);
           setNeedsOnboarding(profile.hasOnboarded === false);
-        } else if (cache.language) {
-          setNeedsLang(false);
-          setNeedsOnboarding(cache.hasOnboarded === false);
         } else {
-          setNeedsLang(true);
+          setNeedsOnboarding(cache.hasOnboarded === false);
         }
-      } catch (e) {
-        reportError(e, { screen: 'AppNavigator', action: 'getUserProfileLanguage' });
-        // A failed/slow profile read must not bounce a returning user into
-        // language select or onboarding. Stay on the cached shell.
-        if (!cache.language) {
-          setNeedsLang(false);
-          setNeedsOnboarding(false);
-        }
-      } finally {
-        setCheckingLang(false);
       }
+      setCheckingLang(false);
     });
     return unsub;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribe once prefs are loaded
