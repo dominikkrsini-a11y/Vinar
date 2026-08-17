@@ -1,34 +1,20 @@
 import 'dotenv/config';
+import { getSentryExpoPlugins } from './src/config/sentryExpoPlugin.js';
 
 // Every value here must come from EXPO_PUBLIC_* environment variables —
 // no hardcoded keys or environment-specific URLs. Set these per environment
 // via `.env` locally, or via EAS Environment Variables for EAS builds
 // (see .env.example for the full required list).
-// SENTRY_ORG / SENTRY_PROJECT are non-secret identifiers used only at build
-// time (by `expo prebuild`/EAS Build) so the Sentry Expo plugin knows where
-// to upload source maps. The actual credential, SENTRY_AUTH_TOKEN, is read
-// directly by the Sentry build tooling from the environment — it must NEVER
-// appear here or in any EXPO_PUBLIC_* variable. When org/project are unset,
-// register the bare "@sentry/react-native" plugin so `npx expo install` and
-// local dev work; when set, use the configured expo plugin for source maps.
-const sentryPlugin =
-  process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
-    ? [
-        [
-          '@sentry/react-native/expo',
-          {
-            url: 'https://sentry.io/',
-            organization: process.env.SENTRY_ORG,
-            project: process.env.SENTRY_PROJECT,
-          },
-        ],
-      ]
-    : ['@sentry/react-native'];
+// SENTRY_ORG / SENTRY_PROJECT / SENTRY_AUTH_TOKEN are build-time only.
+// The auth token must NEVER appear in plugin props or any EXPO_PUBLIC_*
+// variable. Do not register a bare "@sentry/react-native" plugin when those
+// vars are unset — that still injects sentry.gradle and production Android
+// EAS builds fail with "organization ID or slug is required (--org)".
 
 export default ({ config }) => {
   return {
     ...config,
-    plugins: [...(config.plugins ?? []), ...sentryPlugin],
+    plugins: [...(config.plugins ?? []), ...getSentryExpoPlugins()],
     extra: {
       ...(config.extra ?? {}),
       firebaseApiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
