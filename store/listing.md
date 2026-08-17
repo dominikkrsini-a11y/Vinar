@@ -138,7 +138,7 @@ Built for family wineries and small producers — simple, bilingual (Croatian an
 
 ## Still required before submission (owner action)
 
-- Apple Developer / Google Play developer accounts and `eas submit` credentials (`eas.json` `submit.production` is empty).
-- A public **privacy policy URL** — both stores require one for apps with accounts. The landing page (`web/index.html`) is a natural place to host it.
+- Apple Developer / Google Play developer accounts and `eas submit` credentials (see [`ship.md`](ship.md)).
+- A public **privacy policy URL** — host [`web/privacy.html`](../web/privacy.html) via GitHub Pages (`https://dominikkrsini-a11y.github.io/Vinar/privacy.html` once Settings → Pages → GitHub Actions is on) and paste that URL into App Store Connect and Play Console.
 - Store screenshots (6.5" + 5.5" iPhone, 12.9" iPad if `supportsTablet` stays true; phone + 7"/10" tablet for Play).
 - Data-safety / privacy questionnaires: the app collects email (auth), user content (wines, logbook, listings), and analytics events tied to a user id.

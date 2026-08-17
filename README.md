@@ -53,6 +53,10 @@ The app is mobile-only (`npm run web` is not a supported target).
 | `npm test` | Jest — covers app logic **and** `server/services` in one run |
 | `npm run lint` | ESLint over `src/` |
 | `npm run check:i18n` | Verify every referenced translation key exists in both `en` and `hr` |
+| `npm run eas:build:ios` | Production iOS build (TestFlight) via EAS |
+| `npm run eas:build:android` | Production Android AAB (Play Internal) via EAS |
+| `npm run eas:submit:ios` | Submit the latest iOS build to App Store Connect |
+| `npm run eas:submit:android` | Submit the latest Android AAB to Play Internal |
 
 ## Project structure
 
@@ -65,11 +69,13 @@ src/
   i18n/           en + hr translations (checked in CI)
   logbook/        shared entry schema driving forms, detail view, and PDF
 server/           Express assistant proxy (Anthropic + Firebase Admin)
-store/            App Store / Google Play listing copy (HR + EN)
-web/              static marketing landing page (deploy to any static host)
+store/            App Store / Google Play listing copy (HR + EN) + ship checklist
+web/              static marketing landing page + privacy policy (GitHub Pages)
 ```
 
 ## Marketing assets
 
 - `store/listing.md` — ready-to-paste store listing copy (titles, keywords, descriptions, screenshot shot list) in Croatian and English.
-- `web/index.html` — a self-contained bilingual landing page; deploy it to GitHub Pages, Netlify, or any static host.
+- `store/ship.md` — TestFlight + Play Internal commands and owner checklists.
+- `web/index.html` — bilingual landing page.
+- `web/privacy.html` — bilingual privacy policy (required for TestFlight External and Play). After Pages is enabled: `https://dominikkrsini-a11y.github.io/Vinar/privacy.html`.

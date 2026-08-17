@@ -6,9 +6,7 @@ rules_version = '2';
 //   profiles/{userId}/photo.jpg        — ProfileScreen.js
 //   listings/{userId}/{timestamp}.jpg  — screens/marketplace/PostListingModal.js
 //
-// Principle: any signed-in user may read images (profile photos and listing
-// photos are shown to other users in the marketplace), but only the owner
-// of a path may write to it.
+// Owner may delete (account deletion). Create/update still require a valid image.
 
 service firebase.storage {
   match /b/{bucket}/o {
@@ -28,12 +26,14 @@ service firebase.storage {
 
     match /profiles/{userId}/{fileName} {
       allow read: if isSignedIn();
-      allow write: if isOwner(userId) && isValidImage();
+      allow create, update: if isOwner(userId) && isValidImage();
+      allow delete: if isOwner(userId);
     }
 
     match /listings/{userId}/{fileName} {
       allow read: if isSignedIn();
-      allow write: if isOwner(userId) && isValidImage();
+      allow create, update: if isOwner(userId) && isValidImage();
+      allow delete: if isOwner(userId);
     }
 
     // Deny everything else by default.

@@ -318,6 +318,11 @@ export const translations = {
     wineryPlaceholder:     'OPG Horvat',
     phonePlaceholder:      '+385 91 234 5678',
     language:              'Language',
+    deleteAccount:         'Delete account',
+    deleteAccountTitle:    'Delete account?',
+    deleteAccountMsg:      'This permanently deletes your profile, cellar logbook, and marketplace listings. You cannot undo this.',
+    deleteAccountError:    'Could not delete your account. Try again.',
+    deleteAccountReauth:   'For security, log out, sign back in, then delete your account.',
 
     // Feedback (beta micro-surveys)
     feedbackAssistantUseful: 'Was this advice useful?',
@@ -660,6 +665,11 @@ export const translations = {
     wineryPlaceholder:     'OPG Horvat',
     phonePlaceholder:      '+385 91 234 5678',
     language:              'Jezik',
+    deleteAccount:         'Obriši račun',
+    deleteAccountTitle:    'Obrisati račun?',
+    deleteAccountMsg:      'Trajno se brišu profil, podrumski dnevnik i oglasi na tržnici. Ovo se ne može poništiti.',
+    deleteAccountError:    'Račun nije moguće obrisati. Pokušajte ponovo.',
+    deleteAccountReauth:   'Radi sigurnosti odjavite se, prijavite ponovo, pa obrišite račun.',
 
     // Feedback (beta micro-surveys)
     feedbackAssistantUseful: 'Je li ovaj savjet bio koristan?',

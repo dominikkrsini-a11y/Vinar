@@ -1,4 +1,4 @@
-import { lastAssistantTurns, isAbortError, sendAssistantMessage } from '../client';
+import { lastAssistantTurns, isAbortError, sendAssistantMessage, resolveAssistantBaseUrl } from '../client';
 
 jest.mock('expo-constants', () => ({
   expoConfig: { extra: { assistantBaseUrl: 'http://localhost:3001' } },
@@ -58,5 +58,21 @@ describe('sendAssistantMessage abort', () => {
         signal: { aborted: false },
       })
     ).rejects.toMatchObject({ name: 'AbortError', message: 'Request cancelled.' });
+  });
+});
+
+describe('resolveAssistantBaseUrl', () => {
+  test('uses a configured extra URL before env or localhost', () => {
+    expect(resolveAssistantBaseUrl({
+      extraUrl: 'https://api.example.com',
+      envUrl: 'http://localhost:3001',
+      isDev: true,
+    })).toBe('https://api.example.com');
+  });
+
+  test('falls back to localhost only in development', () => {
+    expect(resolveAssistantBaseUrl({ isDev: true })).toBe('http://localhost:3001');
+    expect(resolveAssistantBaseUrl({ isDev: false })).toBeNull();
+    expect(resolveAssistantBaseUrl({ extraUrl: '  ', envUrl: '', isDev: false })).toBeNull();
   });
 });
