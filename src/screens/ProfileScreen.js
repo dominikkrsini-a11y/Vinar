@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
 import { getUserProfile, saveUserProfile, uploadImage } from '../firebase/firestore';
-import { logout } from '../firebase/auth';
+import { logout, deleteCurrentUserAccount } from '../firebase/auth';
 import { LanguageContext } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { reportError } from '../utils/reportError';
@@ -126,6 +126,32 @@ export default function ProfileScreen({ navigation }) {
     Alert.alert(t(language, 'logoutTitle'), t(language, 'logoutMsg'), [
       { text: t(language, 'cancel'), style: 'cancel' },
       { text: t(language, 'logout'), style: 'destructive', onPress: () => logout() },
+    ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(t(language, 'deleteAccountTitle'), t(language, 'deleteAccountMsg'), [
+      { text: t(language, 'cancel'), style: 'cancel' },
+      {
+        text: t(language, 'deleteAccount'),
+        style: 'destructive',
+        onPress: async () => {
+          setSaving(true);
+          try {
+            await deleteCurrentUserAccount();
+          } catch (e) {
+            reportError(e, { screen: 'Profile', action: 'deleteAccount' });
+            const needsReauth = e?.code === 'auth/requires-recent-login';
+            Alert.alert(
+              t(language, 'error'),
+              needsReauth
+                ? t(language, 'deleteAccountReauth')
+                : t(language, 'deleteAccountError')
+            );
+            setSaving(false);
+          }
+        },
+      },
     ]);
   };
 
@@ -272,6 +298,13 @@ export default function ProfileScreen({ navigation }) {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>{t(language, 'logout')}</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={handleDeleteAccount}
+        disabled={saving}>
+        <Text style={styles.deleteText}>{t(language, 'deleteAccount')}</Text>
+      </TouchableOpacity>
       </ScreenWrapper>
     </ScrollView>
   );
@@ -328,4 +361,6 @@ const styles = StyleSheet.create({
   linkSub:        { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   logoutButton:   { alignItems: 'center', marginTop: 20, paddingVertical: 12 },
   logoutText:     { color: colors.textMuted, fontSize: 14 },
+  deleteButton:   { alignItems: 'center', marginTop: 4, marginBottom: 24, paddingVertical: 12 },
+  deleteText:     { color: colors.burgundy, fontSize: 14 },
 });

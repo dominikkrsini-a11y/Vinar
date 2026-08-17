@@ -1,5 +1,5 @@
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, onSnapshot, where } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from './config';
 import { buildDashboardSnapshot } from '../utils/wineDashboardSnapshot';
 
@@ -143,4 +143,29 @@ export const uploadImage = async (uri, storagePath) => {
   await uploadBytes(storageRef, blob);
   const url = await getDownloadURL(storageRef);
   return url;
+};
+
+// Apple requires in-app account deletion. Best-effort: wines + entries,
+// marketplace listings, profile doc, profile photo. Analytics events and
+// leftover listing images may remain (see web/privacy.html).
+export const deleteUserAccountData = async (userId) => {
+  const wines = await getWines(userId);
+  for (const wine of wines) {
+    const entries = await getEntries(userId, wine.id);
+    await Promise.all(entries.map((entry) => deleteEntry(userId, wine.id, entry.id)));
+    await deleteWine(userId, wine.id);
+  }
+
+  const listingsSnap = await getDocs(
+    query(collection(db, 'listings'), where('userId', '==', userId))
+  );
+  await Promise.all(listingsSnap.docs.map((listing) => deleteListing(listing.id)));
+
+  try {
+    await deleteObject(ref(storage, `profiles/${userId}/photo.jpg`));
+  } catch {
+    // Photo may not exist.
+  }
+
+  await deleteDoc(doc(db, 'users', userId));
 };
