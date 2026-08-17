@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     curl \
     ca-certificates \
+    tmux \
+    openssl \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user used by many cloud agent workflows
