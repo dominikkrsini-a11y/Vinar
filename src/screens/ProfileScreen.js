@@ -4,6 +4,7 @@ import {
   StyleSheet, ScrollView, ActivityIndicator, Alert, Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Linking from 'expo-linking';
 import { colors } from '../theme/colors';
 import { auth } from '../firebase/config';
 import { getUserProfile, saveUserProfile, uploadImage } from '../firebase/firestore';
@@ -37,6 +38,7 @@ export default function ProfileScreen({ navigation }) {
   const [showRegions, setShowRegions] = useState(false);
 
   const user = auth.currentUser;
+  const PRIVACY_URL = 'https://dominikkrsini-a11y.github.io/Vinar/privacy.html';
 
   useEffect(() => {
     loadProfile();
@@ -300,6 +302,15 @@ export default function ProfileScreen({ navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity
+        style={styles.privacyButton}
+        onPress={() => Linking.openURL(PRIVACY_URL)}
+      >
+        <Text style={styles.privacyText}>
+          {language === 'hr' ? 'Politika privatnosti' : 'Privacy policy'}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={styles.deleteButton}
         onPress={handleDeleteAccount}
         disabled={saving}>
@@ -361,6 +372,8 @@ const styles = StyleSheet.create({
   linkSub:        { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   logoutButton:   { alignItems: 'center', marginTop: 20, paddingVertical: 12 },
   logoutText:     { color: colors.textMuted, fontSize: 14 },
+  privacyButton:  { alignItems: 'center', marginTop: 12, paddingVertical: 12 },
+  privacyText:    { color: colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
   deleteButton:   { alignItems: 'center', marginTop: 4, marginBottom: 24, paddingVertical: 12 },
   deleteText:     { color: colors.burgundy, fontSize: 14 },
 });

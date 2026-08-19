@@ -63,42 +63,100 @@
     </header>
 
     <h1 data-hr="Politika privatnosti" data-en="Privacy policy"></h1>
-    <p class="updated" data-hr="Zadnje ažuriranje: 17. kolovoza 2026." data-en="Last updated: 17 August 2026."></p>
+    <p class="updated" data-hr="Zadnje ažuriranje: 19. kolovoza 2026." data-en="Last updated: 19 August 2026."></p>
 
-    <p data-hr="Vinar je mobilna aplikacija za male proizvođače vina (dnevnik podruma, kalkulatori i AI asistent). Ova stranica objašnjava koje podatke prikupljamo i kako ih možete obrisati."
-       data-en="Vinar is a mobile app for small wine producers (cellar logbook, calculators, and an AI assistant). This page explains what data we collect and how you can delete it."></p>
+    <p data-hr="Vinar je mobilna aplikacija za male proizvođače vina (podrumski dnevnik, kalkulatori i AI asistent). Ova politika privatnosti objašnjava koje podatke prikupljamo, kako ih koristimo i kako možete zatražiti brisanje podataka." 
+       data-en="Vinar is a mobile app for small wine producers (cellar logbook, calculators, and an AI assistant). This privacy policy explains what data we collect, why we use it, and how you can request deletion."></p>
+
+    <h2 data-hr="Tko je odgovoran za obradu podataka" data-en="Controller"></h2>
+    <p data-hr="Odgovorna osoba: Dominik Krsinic, Lumbarda 338, 20263, Hrvatska. Kontakt za privatnost: vinarapp@gmail.com."
+       data-en="Controller: Dominik Krsinic, Lumbarda 338, 20263, Croatia. Privacy contact: vinarapp@gmail.com."></p>
 
     <h2 data-hr="Koje podatke prikupljamo" data-en="What we collect"></h2>
     <ul>
-      <li data-hr="Račun: e-mail adresa i lozinka (lozinku čuva Firebase Authentication, ne mi u čitljivom obliku)."
-          data-en="Account: email address and password (Firebase Authentication stores the password; we never see it in readable form)."></li>
-      <li data-hr="Profil: ime, prezime, naziv vinarije, telefon, regija, fotografija, odabrani jezik."
-          data-en="Profile: name, winery name, phone, region, photo, and chosen language."></li>
-      <li data-hr="Podrumski dnevnik: vina, unosi (vrenje, SO₂, pretoci, mjerenja, bilješke) i izvezeni PDF-ovi koje vi napravite."
-          data-en="Cellar logbook: wines, entries (fermentation, SO₂, racking, readings, notes), and PDFs you export."></li>
-      <li data-hr="Tržnica: oglasi koje objavite, uključujući slike i kontakt koji odaberete pokazati."
-          data-en="Marketplace: listings you post, including images and any contact details you choose to show."></li>
-      <li data-hr="Analitika: događaji korištenja (npr. dodano vino, korišten kalkulator) vezani uz ID korisnika, bez oglasa i bez praćenja na drugim aplikacijama."
-          data-en="Analytics: usage events (for example wine added, calculator used) tied to a user id — no ads and no tracking across other apps."></li>
-      <li data-hr="AI asistent: poruke koje pošaljete idu na naš poslužitelj (i dalje prema Anthropicu) zajedno s kontekstom iz vašeg dnevnika, da odgovor bude konkretan."
-          data-en="AI assistant: messages you send go to our server (and on to Anthropic) together with context from your logbook so answers can be specific."></li>
+      <li data-hr="Račun: e-mail adresa i lozinka (Firebase Authentication čuva lozinku; mi je nikad ne vidimo u čitljivom obliku). Prijava je e-mail + lozinka (ne koristimo prijavu putem telefona/SMS-a)."
+          data-en="Account: email address and password (Firebase Authentication stores the password; we never see it in readable form). Login is email + password (we do not use phone/SMS login)."></li>
+      <li data-hr="Profil: ime, prezime, naziv vinarije, regija, odabrani jezik, fotografija profila i opcionalni broj telefona."
+          data-en="Profile: first name, last name, winery name, region, chosen language, profile photo, and an optional phone number."></li>
+      <li data-hr="Podrumski dnevnik: vina i unosi koje spremate (vrenje, SO₂, pretoci, mjerenja, bilješke) te podatke koje izvezete u PDF."
+          data-en="Cellar logbook: wines and entries you save (fermentation, SO₂, racking, measurements, notes) and the PDFs you export."></li>
+      <li data-hr="Tržnica: oglasi koje objavite. Slike oglasa pohranjujemo u Firebase Storage. Možete odabrati hoćete li prikazati telefon i/ili e-mail na oglasu (ostali korisnici tada mogu vidjeti kontakt koji ste odabrali)."
+          data-en="Marketplace: listings you post. Listing images are stored in Firebase Storage. You can choose whether to show your phone and/or email on a listing (other signed-in users can see the contact you chose)."></li>
+      <li data-hr="Fotografije: profilna fotografija, fotografije oglasa i opcionalne slike koje priložite asistentu."
+          data-en="Photos: profile photo, listing photos, and optional images you attach to the assistant."></li>
+      <li data-hr="AI asistent: tekst poruka koje pošaljete (i opcionalnu sliku) šalje se našem poslužitelju, a zatim prema Anthropic-u. Poslužitelj koristi kontekst iz vašeg profila i vašeg dnevnika kako bi odgovor bio konkretniji."
+          data-en="AI assistant: the text messages you send (and an optional image) are sent to our server and then to Anthropic. The server uses context from your profile and your logbook to provide more relevant answers."></li>
+      <li data-hr="Analitika (ovisno o pravilima): događaji korištenja (npr. prijava, dodano vino, korišten kalkulator) vezani uz korisnički ID. Ne koristimo ih za oglašavanje."
+          data-en="Analytics (depending on rules): usage events (for example sign-in, wine added, calculator used) tied to a user id. We do not use them for advertising."></li>
+      <li data-hr="Sentry (ako je uključeno): tehnički podaci o pogreškama/rušenjima (stacktrace i meta-podaci) za stabilnost aplikacije."
+          data-en="Sentry (if enabled): technical error/crash data (stack traces and metadata) for app stability."></li>
     </ul>
 
-    <h2 data-hr="Zašto" data-en="Why"></h2>
-    <p data-hr="Da biste se prijavili, vodili dnevnik, koristili kalkulatore i asistenta, i objavljivali oglase. Ne prodajemo vaše podatke. Ne koristimo ih za oglašavanje."
-       data-en="So you can sign in, keep a logbook, use the calculators and assistant, and post listings. We do not sell your data. We do not use it for advertising."></p>
+    <h2 data-hr="Kako koristimo podatke" data-en="How we use data"></h2>
+    <p data-hr="Podatke koristimo kako bismo: (1) omogućili prijavu i rad aplikacije, (2) spremili vaš dnevnik i oglase, (3) omogućili AI asistent (poziv poslužitelju i Anthropic-u), (4) ograničili zlouporabe i održavali kvalitetu usluge, (5) otklanjali pogreške putem crash izvještavanja, i (6) razumjeli osnovne obrasce korištenja kroz analitiku. Ne prodajemo podatke i ne koristimo ih za oglašavanje."
+       data-en="We use data to: (1) enable sign-in and app functionality, (2) store your logbook and listings, (3) provide the AI assistant (calls to our server and Anthropic), (4) limit abuse and maintain service quality, (5) fix issues using crash reporting, and (6) understand basic usage patterns via analytics. We do not sell your data or use it for advertising."></p>
 
-    <h2 data-hr="Kako obrisati račun" data-en="How to delete your account"></h2>
-    <p data-hr="U aplikaciji: Profil → Obriši račun. Time se briše Firebase račun, profil, vina, unosi dnevnika i vaši oglasi. Analitički događaji i eventualne slike u pohrani mogu ostati dok ih ručno ne očistimo. Za brisanje pišite na hello@vinar.app."
-       data-en="In the app: Profile → Delete account. That removes your Firebase account, profile, wines, logbook entries, and your listings. Analytics events and leftover storage images may remain until we purge them. Email hello@vinar.app to request a full wipe."></p>
+    <h2 data-hr="Pravne osnove (GDPR)" data-en="Legal bases (GDPR)"></h2>
+    <ul>
+      <li data-hr="Ugovor / ispunjenje ugovora: kako bismo pružili funkcionalnosti aplikacije (prijava, spremanje dnevnika, tržnica, asistent)."
+          data-en="Contract / contractual necessity: to provide app features (sign-in, logbook, marketplace, assistant)."></li>
+      <li data-hr="Privola: za opcionalne značajke kao što su prikaz telefona/e-maila na oglasu, slanje slika asistentu i dopuštanje obavijesti (lokalno podsjećanje)."
+          data-en="Consent: for optional features such as showing phone/email on a listing, sending images to the assistant, and allowing notifications (local reminders)."></li>
+      <li data-hr="Legitimni interesi: sigurnost, sprječavanje zlouporaba, i tehnička dijagnostika (analitika i crash izvještavanje)."
+          data-en="Legitimate interests: security, preventing abuse, and technical diagnostics (analytics and crash reporting)."></li>
+    </ul>
+
+    <h2 data-hr="S kim dijelimo podatke" data-en="Who we share data with"></h2>
+    <ul>
+      <li data-hr="Firebase (Google): Authentication, Firestore i Storage (spremanje profila, dnevnika, oglasa i fotografija)."
+          data-en="Firebase (Google): Authentication, Firestore, and Storage (profile, logbook, listings, and photos)."></li>
+      <li data-hr="Poslužitelj Vinar asistenta: provjerava vaš Firebase ID token, učitava kontekst iz vašeg dnevnika i poziva Anthropic."
+          data-en="Vinar assistant server: verifies your Firebase ID token, loads context from your logbook, and calls Anthropic."></li>
+      <li data-hr="Anthropic: obrađuje vaše poruke (i opcionalnu sliku) kako bi generirao odgovor."
+          data-en="Anthropic: processes your messages (and an optional image) to generate responses."></li>
+      <li data-hr="Upstash (ako je uključeno): dodatno ograničavanje broja zahtjeva."
+          data-en="Upstash (if enabled): rate limiting."></li>
+      <li data-hr="Sentry (ako je uključeno): crash i error izvještavanje."
+          data-en="Sentry (if enabled): crash and error reporting."></li>
+    </ul>
+
+    <h2 data-hr="Prijenosi podataka izvan EU" data-en="Data transfers outside the EU"></h2>
+    <p data-hr="Vaši podaci mogu biti obrađivani izvan Europskog gospodarskog prostora (npr. kod pružatelja usluga poput Google Firebase i Anthropic). Gdje je potrebno, primjenjuju se odgovarajuće zaštitne mjere u skladu s GDPR-om."
+       data-en="Your data may be processed outside the European Economic Area (for example by service providers such as Google Firebase and Anthropic). Where applicable, we apply appropriate safeguards under GDPR."></p>
+
+    <h2 data-hr="Koliko dugo čuvamo podatke" data-en="How long we keep data"></h2>
+    <p data-hr="Podatke čuvamo dok je vaš račun aktivan. Nakon brisanja računa nastojimo ukloniti vaše podatke u razumnom roku. Kao i kod većine cloud sustava, možemo zadržati neke kopije kao dio sigurnosnih kopija određeno vrijeme. Offline kopije dnevnika ostaju na uređaju dok ne deinstalirate aplikaciju."
+       data-en="We keep data while your account is active. After account deletion, we aim to remove your data within a reasonable time. Like most cloud systems, we may keep some copies as part of backups for a limited period. Offline logbook copies remain on your device until you uninstall the app."></p>
+
+    <h2 data-hr="Kako obrisati račun (i zatražiti brisanje podataka)" data-en="How to delete your account (and request deletion)"></h2>
+    <p data-hr="U aplikaciji: Profil → Obriši račun. Time se briše Firebase račun, profil, vina, unosi dnevnika i vaši oglasi. Također brišemo povezane podatke poput povratnih informacija, analitike i dnevnih brojača za asistenta, kao i slike oglasa povezane s vašim računom. Ako je potrebno, možete poslati zahtjev e-mailom na vinarapp@gmail.com."
+       data-en="In the app: Profile → Delete account. This removes your Firebase account, profile, wines, logbook entries, and your listings. We also delete related data such as feedback, analytics, and assistant usage counters, and we remove listing images associated with your account. If needed, you can request deletion by emailing vinarapp@gmail.com."></p>
+
+    <h2 data-hr="Koja su vaša GDPR prava" data-en="Your GDPR rights"></h2>
+    <ul>
+      <li data-hr="Pravo na pristup (kopiju) podataka."
+          data-en="Right of access (copy) of your data."></li>
+      <li data-hr="Pravo na ispravak netočnih podataka."
+          data-en="Right to rectification of inaccurate data."></li>
+      <li data-hr="Pravo na brisanje (\"pravo na zaborav\")."
+          data-en="Right to erasure (\"right to be forgotten\")."></li>
+      <li data-hr="Pravo na ograničavanje obrade."
+          data-en="Right to restrict processing."></li>
+      <li data-hr="Pravo na prijenos podataka (data portability)."
+          data-en="Right to data portability."></li>
+      <li data-hr="Pravo na prigovor na obradu i pravo na povlačenje privole."
+          data-en="Right to object and right to withdraw consent."></li>
+      <li data-hr="Pravo podnošenja pritužbe nadzornom tijelu u Hrvatskoj (AZOP – Agencija za zaštitu osobnih podataka)."
+          data-en="Right to lodge a complaint with the Croatian supervisory authority (AZOP – Personal Data Protection Agency)."></li>
+    </ul>
 
     <h2 data-hr="Djeca" data-en="Children"></h2>
     <p data-hr="Vinar nije namijenjen osobama mlađim od 16 godina."
        data-en="Vinar is not intended for anyone under 16."></p>
 
     <h2 data-hr="Kontakt" data-en="Contact"></h2>
-    <p data-hr="Pitanja o privatnosti: hello@vinar.app"
-       data-en="Privacy questions: hello@vinar.app"></p>
+    <p data-hr="Pitanja o privatnosti: vinarapp@gmail.com"
+       data-en="Privacy questions: vinarapp@gmail.com"></p>
 
     <footer>
       <a href="index.html" data-hr="← Natrag na Vinar" data-en="← Back to Vinar"></a>

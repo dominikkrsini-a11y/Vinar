@@ -29,6 +29,11 @@
         "backgroundColor": "#0f0608"
       },
       "package": "com.danilo1.vinar",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ],
       "edgeToEdgeEnabled": true
     },
     "web": {

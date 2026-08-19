@@ -46,7 +46,7 @@ export function PostListingModal({
   const [category, setCategory] = useState('grapes');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [showPhone, setShowPhone] = useState(true);
+  const [showPhone, setShowPhone] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [saving, setSaving] = useState(false);
   const [image, setImage] = useState(null);
@@ -57,7 +57,7 @@ export function PostListingModal({
     setCategory('grapes');
     setDescription('');
     setPrice('');
-    setShowPhone(true);
+    setShowPhone(false);
     setShowEmail(false);
     setImage(null);
   };
