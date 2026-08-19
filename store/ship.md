@@ -18,7 +18,25 @@ https://expo.dev → project **vinar** → Environment variables → environment
 
 - All `EXPO_PUBLIC_FIREBASE_*` from `.env.example`
 - `EXPO_PUBLIC_ASSISTANT_BASE_URL` = https URL of the deployed assistant proxy (no trailing slash, not localhost)
-- Optional: `EXPO_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`; `SENTRY_AUTH_TOKEN` as a Secret
+- **Sentry (required for production Android/iOS source maps)** — see the table below. Preview/development can omit these; those EAS profiles set `SENTRY_DISABLE_AUTO_UPLOAD=true`.
+
+### Sentry — copy from sentry.io into EAS production
+
+Create a **React Native** project at [sentry.io](https://sentry.io) if you do not have one. Then on expo.dev → **vinar** → **Environment variables** → environment **production**, add:
+
+| EAS variable | Visibility | Copy from sentry.io |
+| --- | --- | --- |
+| `EXPO_PUBLIC_SENTRY_DSN` | Plain text | **Settings → Projects → [your project] → Client Keys (DSN)**. Looks like `https://<key>@o<orgId>.ingest.sentry.io/<projectId>`. This is bundled into the app (not a secret). |
+| `SENTRY_ORG` | Plain text | **Settings → General Settings → Organization Slug**, or the first path segment in `https://<slug>.sentry.io/…`. Example: `my-winery`. Not the numeric `o123456` from the DSN. |
+| `SENTRY_PROJECT` | Plain text | **Settings → Projects** → the project’s **slug** in the list (often `react-native` or `vinar`). Case-sensitive. |
+| `SENTRY_AUTH_TOKEN` | **Secret** (or Sensitive) | **Settings → Developer Settings → [Auth Tokens](https://sentry.io/settings/auth-tokens/)** → create an **Organization Auth Token**. Default scopes (source maps + releases) are enough. Never prefix this with `EXPO_PUBLIC_`. |
+
+Do not put `SENTRY_AUTH_TOKEN` in `app.config.js`, `eas.json`, or git. After saving the four variables, rebuild:
+
+```bash
+npx eas-cli env:list --environment production
+npx eas-cli build --platform android --profile production
+```
 
 If the proxy is not live, testers can still use the logbook and calculators; the assistant will show “not configured”.
 

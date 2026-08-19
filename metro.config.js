@@ -1,10 +1,9 @@
 const { getDefaultConfig } = require('expo/metro-config');
 
 // Sentry's Metro plugin assigns Debug IDs so uploaded source maps match the
-// shipped bundle. Treated as optional here for the same reason app.config.js
-// only adds the Sentry plugin when SENTRY_ORG/SENTRY_PROJECT are set: a
-// missing Sentry install should not make the bundler unusable. Production
-// builds still fail loudly so source map upload can't silently regress.
+// shipped bundle. Keep Metro usable without a Sentry install; app.config.js
+// only adds the native upload plugin when SENTRY_ORG, SENTRY_PROJECT, and
+// SENTRY_AUTH_TOKEN are all set.
 function buildMetroConfig() {
   try {
     const { getSentryExpoConfig } = require('@sentry/react-native/metro');
