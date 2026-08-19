@@ -145,9 +145,23 @@ export const uploadImage = async (uri, storagePath) => {
   return url;
 };
 
+function storagePathFromDownloadUrl(downloadUrl) {
+  // Firebase Storage download URLs look like:
+  //   https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<encodedPath>?alt=media&token=...
+  // We extract <encodedPath> so we can delete the object by path.
+  try {
+    const match = String(downloadUrl).match(/\/o\/([^?]+)/);
+    if (!match) return null;
+    const encodedPath = match[1];
+    return decodeURIComponent(encodedPath);
+  } catch {
+    return null;
+  }
+}
+
 // Apple requires in-app account deletion. Best-effort: wines + entries,
-// marketplace listings, profile doc, profile photo. Analytics events and
-// leftover listing images may remain (see web/privacy.html).
+// marketplace listings, listing images in Storage, feedback, analytics events,
+// assistant usage counters, profile doc, and profile photo.
 export const deleteUserAccountData = async (userId) => {
   const wines = await getWines(userId);
   for (const wine of wines) {
@@ -157,14 +171,56 @@ export const deleteUserAccountData = async (userId) => {
   }
 
   const listingsSnap = await getDocs(
-    query(collection(db, 'listings'), where('userId', '==', userId))
+    query(collection(db, 'listings'), where('userId', '==', userId)),
   );
-  await Promise.all(listingsSnap.docs.map((listing) => deleteListing(listing.id)));
+  await Promise.all(listingsSnap.docs.map(async (listing) => {
+    const { imageUrl } = listing.data() || {};
+    if (imageUrl) {
+      const storagePath = storagePathFromDownloadUrl(imageUrl);
+      if (storagePath) {
+        try {
+          await deleteObject(ref(storage, storagePath));
+        } catch {
+          // Best-effort: deletion may fail if the object was already removed.
+        }
+      }
+    }
+    await deleteListing(listing.id);
+  }));
 
   try {
     await deleteObject(ref(storage, `profiles/${userId}/photo.jpg`));
   } catch {
     // Photo may not exist.
+  }
+
+  // Remove beta micro-survey feedback answers for this account.
+  try {
+    const feedbackSnap = await getDocs(
+      query(collection(db, 'feedback'), where('userId', '==', userId)),
+    );
+    await Promise.all(feedbackSnap.docs.map((d) => deleteDoc(d.ref)));
+  } catch {
+    // Best-effort: security rules or missing docs may prevent deletion.
+  }
+
+  // Remove usage analytics events tied to this user id.
+  try {
+    const analyticsSnap = await getDocs(
+      query(collection(db, 'analytics_events'), where('userId', '==', userId)),
+    );
+    await Promise.all(analyticsSnap.docs.map((d) => deleteDoc(d.ref)));
+  } catch {
+    // Best-effort.
+  }
+
+  // Remove assistant daily usage counters tied to this account.
+  try {
+    const dailySnap = await getDocs(collection(db, 'assistantUsage', userId, 'daily'));
+    await Promise.all(dailySnap.docs.map((d) => deleteDoc(d.ref)));
+    await deleteDoc(doc(db, 'assistantUsage', userId));
+  } catch {
+    // Best-effort.
   }
 
   await deleteDoc(doc(db, 'users', userId));

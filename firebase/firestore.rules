@@ -59,7 +59,28 @@ service cloud.firestore {
                     && request.resource.data.userId == request.auth.uid;
       allow read: if isSignedIn()
                   && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isSignedIn()
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Usage analytics events (global collection) ─────────────────────
+    match /analytics_events/{eventId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn()
+                  && resource.data.userId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isSignedIn()
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Assistant daily usage counters (global collection) ─────────────
+    match /assistantUsage/{userId} {
+      allow read, delete: if isSignedIn() && request.auth.uid == userId;
+      match /daily/{dailyId} {
+        allow read, delete: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     // Deny everything else by default.
